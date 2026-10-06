@@ -54,7 +54,9 @@ const fileFilter = (req, file, cb) => {
   const extname = allowedTypes.test(file.originalname.toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
   if (extname && mimetype) return cb(null, true);
-  cb(new Error('Only image files are allowed (jpg, png, gif, webp, svg)'));
+  const err = new Error('Only image files are allowed (jpg, png, gif, webp, svg)');
+  err.status = 400; // a rejected file type is a bad request, not a server failure
+  cb(err);
 };
 
 const upload = multer({
@@ -878,7 +880,7 @@ app.use((err, req, res, next) => {
       return res.status(400).json({ success: false, message: 'File too large. Max 5MB allowed.' });
     }
   }
-  res.status(500).json({ success: false, message: err.message || 'Internal server error' });
+  res.status(err.status || 500).json({ success: false, message: err.message || 'Internal server error' });
 });
 
 app.use((req, res) => {
