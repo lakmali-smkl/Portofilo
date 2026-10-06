@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "migrate": "node migrate-to-mongo.js"
+    "migrate": "node migrate-to-mongo.js",
+    "reset-password": "node reset-password.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
