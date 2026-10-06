@@ -832,6 +832,10 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
           <span>Certificates</span>
         </button>
+        <button class="admin-tab-btn" data-tab="tab-research">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Research (Private)</span>
+        </button>
         <button class="admin-tab-btn" data-tab="tab-messages">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span>Messages</span>
@@ -1185,6 +1189,22 @@
         </div>
       </div>
 
+      <!-- Tab: Research Projects (private — owner only, never public) -->
+      <div class="admin-tab-content" id="tab-research">
+        <div class="admin-form-container">
+          <p class="admin-text admin-private-notice">
+            🔒 Private — these research projects are only visible to you. They are never shown anywhere on your public portfolio, and the data cannot be read by visitors even directly through the API.
+          </p>
+          <p class="admin-text">
+            Manage your research projects in a dedicated full-screen workspace, where you can also keep a running diary of your progress on each one — like a project journal.
+          </p>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-open-research-workspace">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18-5h-3a2 2 0 0 0-2 2v3M3 16v3a2 2 0 0 0 2 2h3m11-5v3a2 2 0 0 1-2 2h-3"/></svg>
+            <span>Open Research Workspace (Full Screen)</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Tab: Contact Messages Inbox -->
       <div class="admin-tab-content" id="tab-messages">
         <div class="admin-form-container">
@@ -1297,7 +1317,7 @@
         <div class="admin-backup-card">
           <h4 class="admin-form-heading">Manage Stored Data</h4>
           <p class="admin-text">
-            All your updates are automatically saved to the backend server (<code>backend/data/</code>). You can export your data as JSON for backup, or restore the default project template — this removes any custom projects, profile edits, and uploaded photos.
+            All your updates are automatically saved to your MongoDB Atlas cloud database. You can export your data as JSON for backup, or restore the default project template — this removes any custom projects, profile edits, and uploaded photos.
           </p>
           <div class="admin-data-actions">
             <button class="btn btn-outline btn-sm" id="btn-export-data">
@@ -1310,6 +1330,215 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== RESEARCH WORKSPACE (full screen, private) ==================== -->
+  <div class="research-workspace" id="research-workspace" aria-hidden="true">
+    <div class="research-workspace-inner">
+      <div class="research-workspace-header">
+        <div>
+          <h2 class="research-workspace-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Research Projects
+          </h2>
+          <p class="research-workspace-sub">🔒 Private — only visible to you, never shown on your public portfolio.</p>
+        </div>
+        <button class="modal-close" id="research-workspace-close" aria-label="Close research workspace">&times;</button>
+      </div>
+
+      <div class="research-workspace-body">
+        <aside class="research-sidebar">
+          <button type="button" class="btn btn-primary btn-sm research-new-btn" id="btn-new-research">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>New Research Project</span>
+          </button>
+          <div class="research-project-list" id="research-project-list">
+            <!-- Dynamically rendered project cards -->
+          </div>
+        </aside>
+
+        <main class="research-detail" id="research-detail">
+          <div class="research-empty-state" id="research-empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <p>Select a research project on the left, or create a new one, to see its details and diary.</p>
+          </div>
+
+          <div class="research-detail-content" id="research-detail-content" hidden>
+            <h3 class="research-detail-title" id="research-detail-title">Research Project</h3>
+
+            <div class="research-inner-tabs" id="research-inner-tabs">
+              <button type="button" class="research-inner-tab-btn active" data-rtab="overview">Project Details</button>
+              <button type="button" class="research-inner-tab-btn" data-rtab="timeline">Timeline</button>
+              <button type="button" class="research-inner-tab-btn" data-rtab="papers">Literature</button>
+              <button type="button" class="research-inner-tab-btn" data-rtab="schedule">Schedule</button>
+              <button type="button" class="research-inner-tab-btn" data-rtab="progress">Progress</button>
+              <button type="button" class="research-inner-tab-btn" data-rtab="resources">Resources</button>
+            </div>
+
+            <p class="research-unsaved-hint" id="research-unsaved-hint" hidden>Save the project details first to unlock Timeline, Literature, Schedule, Progress and Resources.</p>
+
+            <!-- Pane: Project Details -->
+            <div class="research-pane" id="research-pane-overview" data-rpane="overview">
+              <form id="manage-research-form" class="admin-form">
+                <input type="hidden" id="edit-research-id" value="" />
+                <div class="admin-form-row">
+                  <div class="form-group">
+                    <label for="research-title" class="form-label">Title <span class="required">*</span></label>
+                    <input type="text" id="research-title" class="form-input" placeholder="e.g. Predicting Student Performance with ML" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="research-field" class="form-label">Field / Topic</label>
+                    <input type="text" id="research-field" class="form-input" placeholder="e.g. Machine Learning" />
+                  </div>
+                </div>
+                <div class="admin-form-row">
+                  <div class="form-group">
+                    <label for="research-status" class="form-label">Status</label>
+                    <input type="text" id="research-status" class="form-input" placeholder="e.g. Ongoing / Under Review / Completed" />
+                  </div>
+                  <div class="form-group">
+                    <label for="research-link" class="form-label">Private Link (optional)</label>
+                    <input type="url" id="research-link" class="form-input" placeholder="e.g. link to your draft / Drive folder" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="research-desc" class="form-label">Notes / Description</label>
+                  <textarea id="research-desc" rows="3" class="form-input form-textarea" placeholder="Private notes about this research project..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="research-tags" class="form-label">Tags (comma separated)</label>
+                  <input type="text" id="research-tags" class="form-input" placeholder="e.g. Python, Dataset, Supervisor Name" />
+                </div>
+                <div class="form-group">
+                  <label for="research-image-file" class="form-label">Cover Image / Screenshot</label>
+                  <input type="file" id="research-image-file" class="form-input" accept="image/*" />
+                  <span class="file-hint">Optional (max 5MB). Also kept private.</span>
+                  <img id="research-image-preview" class="proj-image-preview" alt="Research cover preview" hidden />
+                </div>
+                <div class="admin-form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm" id="btn-save-research">
+                    <span>Save Details</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-delete-research">
+                    <span>Delete Project</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Pane: Timeline / Diary -->
+            <div class="research-pane" id="research-pane-timeline" data-rpane="timeline" hidden>
+              <h4 class="admin-form-heading">Project Diary</h4>
+              <p class="admin-text">Add a quick update any time you make progress on this project — like a running journal.</p>
+              <form id="research-diary-form" class="research-diary-form">
+                <input type="date" id="diary-date" class="form-input" />
+                <input type="text" id="diary-note" class="form-input" placeholder="What did you work on today?" required />
+                <button type="submit" class="btn btn-secondary btn-sm">
+                  <span>Add Entry</span>
+                </button>
+              </form>
+              <div class="research-timeline" id="research-timeline">
+                <!-- Dynamically rendered diary entries -->
+              </div>
+            </div>
+
+            <!-- Pane: Literature / Papers table -->
+            <div class="research-pane" id="research-pane-papers" data-rpane="papers" hidden>
+              <h4 class="admin-form-heading">Literature / Papers Read</h4>
+              <p class="admin-text">Track each paper you read — your key findings and how much of it you've gone through.</p>
+              <form id="research-paper-form" class="research-table-form">
+                <input type="hidden" id="paper-edit-id" value="" />
+                <input type="text" id="paper-title" class="form-input" placeholder="Paper title *" required />
+                <input type="text" id="paper-authors" class="form-input" placeholder="Authors / Year" />
+                <input type="url" id="paper-link" class="form-input" placeholder="Link (DOI / PDF)" />
+                <select id="paper-status" class="form-input">
+                  <option value="Not Started">Not Started</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                <input type="number" id="paper-progress" class="form-input" placeholder="% read" min="0" max="100" />
+                <input type="text" id="paper-notes" class="form-input" placeholder="Key points you found" />
+                <button type="submit" class="btn btn-secondary btn-sm" id="btn-save-paper"><span>Add Paper</span></button>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-paper-edit" style="display:none;"><span>Cancel</span></button>
+              </form>
+              <div class="research-table-wrap">
+                <table class="research-table">
+                  <thead>
+                    <tr><th>Title</th><th>Authors</th><th>Status</th><th>% Read</th><th>Key Points</th><th></th></tr>
+                  </thead>
+                  <tbody id="papers-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Pane: Schedule / Milestones table -->
+            <div class="research-pane" id="research-pane-schedule" data-rpane="schedule" hidden>
+              <h4 class="admin-form-heading">Project Schedule / Milestones</h4>
+              <p class="admin-text">Plan phases like Literature Review, Build, Testing, Writing — with dates and status, like a professional project timeline.</p>
+              <form id="research-milestone-form" class="research-table-form">
+                <input type="hidden" id="milestone-edit-id" value="" />
+                <input type="text" id="milestone-task" class="form-input" placeholder="Phase / Task *" required />
+                <input type="date" id="milestone-start" class="form-input" />
+                <input type="date" id="milestone-end" class="form-input" />
+                <select id="milestone-status" class="form-input">
+                  <option value="Not Started">Not Started</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                <input type="text" id="milestone-notes" class="form-input" placeholder="Notes" />
+                <button type="submit" class="btn btn-secondary btn-sm" id="btn-save-milestone"><span>Add Phase</span></button>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-milestone-edit" style="display:none;"><span>Cancel</span></button>
+              </form>
+              <div class="research-table-wrap">
+                <table class="research-table">
+                  <thead>
+                    <tr><th>Phase / Task</th><th>Start</th><th>End</th><th>Status</th><th>Notes</th><th></th></tr>
+                  </thead>
+                  <tbody id="milestones-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Pane: Progress diagrams -->
+            <div class="research-pane" id="research-pane-progress" data-rpane="progress" hidden>
+              <h4 class="admin-form-heading">Progress Overview</h4>
+              <div class="research-progress-grid" id="research-progress-grid">
+                <!-- Dynamically rendered charts -->
+              </div>
+            </div>
+
+            <!-- Pane: Saved Resources -->
+            <div class="research-pane" id="research-pane-resources" data-rpane="resources" hidden>
+              <h4 class="admin-form-heading">Saved Resources</h4>
+              <p class="admin-text">Keep links to datasets, tools, references, or anything else useful for this project.</p>
+              <form id="research-resource-form" class="research-table-form">
+                <input type="hidden" id="resource-edit-id" value="" />
+                <input type="text" id="resource-title" class="form-input" placeholder="Name *" required />
+                <input type="url" id="resource-url" class="form-input" placeholder="Link" />
+                <select id="resource-type" class="form-input">
+                  <option value="Dataset">Dataset</option>
+                  <option value="Tool">Tool</option>
+                  <option value="Reference">Reference</option>
+                  <option value="Contact">Contact</option>
+                  <option value="Other">Other</option>
+                </select>
+                <input type="text" id="resource-notes" class="form-input" placeholder="Notes" />
+                <button type="submit" class="btn btn-secondary btn-sm" id="btn-save-resource"><span>Add Resource</span></button>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-resource-edit" style="display:none;"><span>Cancel</span></button>
+              </form>
+              <div class="research-table-wrap">
+                <table class="research-table">
+                  <thead>
+                    <tr><th>Name</th><th>Type</th><th>Link</th><th>Notes</th><th></th></tr>
+                  </thead>
+                  <tbody id="resources-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   </div>

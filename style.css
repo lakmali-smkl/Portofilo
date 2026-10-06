@@ -190,6 +190,7 @@ ul {
 .gradient-text {
   background: var(--accent-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
 }
@@ -314,6 +315,7 @@ ul {
 .logo-text {
   background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -2470,6 +2472,466 @@ a.contact-detail-val:hover {
   color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: 1.25rem;
+}
+
+.admin-private-notice {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+}
+
+/* ==================== RESEARCH WORKSPACE (full-screen, private) ==================== */
+.research-workspace {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  background: var(--bg-primary);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+
+.research-workspace.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.research-workspace-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.research-workspace-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.research-workspace-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.research-workspace-sub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0.35rem 0 0;
+}
+
+.research-workspace-header .modal-close {
+  position: static;
+}
+
+.research-workspace-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.research-sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
+  padding: 1.25rem;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+}
+
+.research-new-btn {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.research-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.research-project-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.research-project-card:hover {
+  border-color: var(--accent-primary);
+}
+
+.research-project-card.active {
+  border-color: var(--accent-primary);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.research-project-card .rp-title {
+  display: block;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  margin-bottom: 0.25rem;
+}
+
+.research-project-card .rp-meta {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.research-detail {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.75rem 2rem;
+}
+
+.research-empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.research-diary {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.research-diary-form {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.research-diary-form #diary-date {
+  flex: 0 0 160px;
+}
+
+.research-diary-form #diary-note {
+  flex: 1 1 240px;
+}
+
+.research-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-left: 2px solid var(--border-color);
+  padding-left: 1.25rem;
+  margin-left: 0.4rem;
+}
+
+.research-timeline-item {
+  position: relative;
+  padding-bottom: 1.25rem;
+}
+
+.research-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.56rem;
+  top: 0.3rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+}
+
+.research-timeline-date {
+  display: block;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--accent-primary);
+  margin-bottom: 0.2rem;
+}
+
+.research-timeline-note {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.research-timeline-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  margin-top: 0.3rem;
+  padding: 0;
+}
+
+.research-timeline-delete:hover {
+  color: #ef4444;
+}
+
+.research-unsaved-hint {
+  margin-top: 1.5rem;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.research-detail-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+/* -------- Inner tab nav (Overview / Timeline / Literature / Schedule / Progress / Resources) -------- */
+.research-inner-tabs {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1.25rem;
+}
+
+.research-inner-tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.research-inner-tab-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.research-inner-tab-btn.active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+.research-inner-tab-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.research-unsaved-hint {
+  margin-bottom: 1.25rem;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+/* -------- Sub-resource add forms (papers / milestones / resources) -------- */
+.research-table-form {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.research-table-form .form-input {
+  flex: 1 1 150px;
+}
+
+/* -------- Excel-sheet style tables -------- */
+.research-table-wrap {
+  overflow-x: auto;
+  margin-top: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.research-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 640px;
+}
+
+.research-table th {
+  text-align: left;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.research-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: top;
+}
+
+.research-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.research-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.research-table-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 1.5rem !important;
+}
+
+.research-table-actions {
+  white-space: nowrap;
+}
+
+.research-status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-completed { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.status-in-progress { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+.status-not-started { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+
+/* -------- Progress tab: donut charts + status breakdown bars -------- */
+.research-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.research-chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.research-chart-card h5 {
+  margin: 0 0 0.25rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.research-chart-wide {
+  grid-column: 1 / -1;
+  text-align: left;
+}
+
+.research-donut {
+  --pct: 0;
+  --donut-color: var(--accent-primary);
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: conic-gradient(var(--donut-color) calc(var(--pct) * 1%), rgba(255, 255, 255, 0.08) 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.75rem auto;
+  position: relative;
+}
+
+.research-donut::before {
+  content: '';
+  position: absolute;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+}
+
+.research-donut-value {
+  position: relative;
+  z-index: 1;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.research-stackbar {
+  display: flex;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  margin-bottom: 0.6rem;
+}
+
+.research-stackbar-seg {
+  height: 100%;
+}
+
+.seg-completed { background: var(--success); }
+.seg-inprogress { background: var(--warning); }
+.seg-notstarted { background: var(--text-dim); }
+
+.research-stackbar-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.research-stackbar-legend .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+}
+
+.dot-completed { background: var(--success); }
+.dot-inprogress { background: var(--warning); }
+.dot-notstarted { background: var(--text-dim); }
+
+@media (max-width: 760px) {
+  .research-workspace-body {
+    flex-direction: column;
+  }
+  .research-sidebar {
+    width: 100%;
+    max-height: 220px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .research-detail {
+    padding: 1.25rem;
+  }
 }
 
 .admin-data-actions {

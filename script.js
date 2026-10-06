@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedExperience = [];
   let cachedCertificates = [];
   let cachedEvents = [];
+  let cachedResearch = [];
 
   async function fetchProjects() {
     try {
@@ -172,6 +173,21 @@ document.addEventListener('DOMContentLoaded', () => {
   async function fetchExperience() { cachedExperience = await fetchResource('experience'); return cachedExperience; }
   async function fetchCertificates() { cachedCertificates = await fetchResource('certificates'); return cachedCertificates; }
   async function fetchEvents() { cachedEvents = await fetchResource('events'); return cachedEvents; }
+
+  // Research projects are private: the GET route itself requires the owner's
+  // login, so this (unlike fetchResource above) must use authFetch — and
+  // must only ever be called while logged in (see openResearchWorkspace()).
+  async function fetchResearch() {
+    try {
+      const res = await authFetch(`${API_BASE}/api/research`);
+      const json = await res.json();
+      cachedResearch = json.success ? json.data : [];
+    } catch (e) {
+      console.warn('Could not reach backend server for research:', e);
+      cachedResearch = [];
+    }
+    return cachedResearch;
+  }
 
   /* ==================== 4. ICON HELPERS ==================== */
   function getBannerIcon(category) {
@@ -895,6 +911,570 @@ document.addEventListener('DOMContentLoaded', () => {
     buildMeta: (c) => [c.organization, c.date].filter(Boolean).join(' • ') || 'Certificate',
     afterChange: () => renderCertificates()
   });
+
+  /* ==================== 10b. RESEARCH WORKSPACE (private, full-screen) ====================
+     Not built on setupResourceAdmin — it's a mini app in its own right: a
+     sidebar of projects, and per-project tabs for Details / Timeline /
+     Literature / Schedule / Progress / Resources. */
+  const researchWorkspace = document.getElementById('research-workspace');
+  const btnOpenResearchWorkspace = document.getElementById('btn-open-research-workspace');
+  const researchWorkspaceClose = document.getElementById('research-workspace-close');
+  const researchProjectListEl = document.getElementById('research-project-list');
+  const researchEmptyState = document.getElementById('research-empty-state');
+  const researchDetailContent = document.getElementById('research-detail-content');
+  const researchDetailTitleEl = document.getElementById('research-detail-title');
+  const researchUnsavedHint = document.getElementById('research-unsaved-hint');
+  const researchForm = document.getElementById('manage-research-form');
+  const researchIdInput = document.getElementById('edit-research-id');
+  const researchImageInput = document.getElementById('research-image-file');
+  const researchImagePreview = document.getElementById('research-image-preview');
+  const btnNewResearch = document.getElementById('btn-new-research');
+  const btnDeleteResearch = document.getElementById('btn-delete-research');
+  const researchDiaryForm = document.getElementById('research-diary-form');
+  const researchTimelineEl = document.getElementById('research-timeline');
+  const researchInnerTabBtns = document.querySelectorAll('.research-inner-tab-btn');
+  const researchProgressGrid = document.getElementById('research-progress-grid');
+
+  const researchFields = [
+    { key: 'title', el: document.getElementById('research-title') },
+    { key: 'field', el: document.getElementById('research-field') },
+    { key: 'status', el: document.getElementById('research-status') },
+    { key: 'link', el: document.getElementById('research-link') },
+    { key: 'description', el: document.getElementById('research-desc') },
+    { key: 'tags', el: document.getElementById('research-tags'), type: 'tags' }
+  ];
+
+  let selectedResearchId = null;
+
+  function openResearchWorkspace() {
+    if (!researchWorkspace) return;
+    closeAdminModal();
+    researchWorkspace.classList.add('open');
+    researchWorkspace.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    fetchResearch().then(() => {
+      renderResearchProjectList();
+      if (selectedResearchId && cachedResearch.some(r => r.id === selectedResearchId)) {
+        selectResearchProject(selectedResearchId);
+      } else {
+        showResearchEmptyState();
+      }
+    });
+  }
+
+  function closeResearchWorkspace() {
+    if (!researchWorkspace) return;
+    researchWorkspace.classList.remove('open');
+    researchWorkspace.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  if (btnOpenResearchWorkspace) btnOpenResearchWorkspace.addEventListener('click', openResearchWorkspace);
+  if (researchWorkspaceClose) researchWorkspaceClose.addEventListener('click', closeResearchWorkspace);
+
+  function switchResearchTab(tabName) {
+    researchInnerTabBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-rtab') === tabName));
+    document.querySelectorAll('.research-pane').forEach(p => {
+      p.hidden = p.getAttribute('data-rpane') !== tabName;
+    });
+    if (tabName === 'progress') renderResearchProgress();
+  }
+
+  researchInnerTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => switchResearchTab(btn.getAttribute('data-rtab')));
+  });
+
+  function setResearchTabsLocked(locked) {
+    researchInnerTabBtns.forEach(b => {
+      if (b.getAttribute('data-rtab') === 'overview') return;
+      b.disabled = locked;
+    });
+  }
+
+  function showResearchEmptyState() {
+    selectedResearchId = null;
+    if (researchEmptyState) researchEmptyState.hidden = false;
+    if (researchDetailContent) researchDetailContent.hidden = true;
+    renderResearchProjectList();
+  }
+
+  function showResearchForm(isNew) {
+    if (researchEmptyState) researchEmptyState.hidden = true;
+    if (researchDetailContent) researchDetailContent.hidden = false;
+    if (researchUnsavedHint) researchUnsavedHint.hidden = !isNew;
+    if (btnDeleteResearch) btnDeleteResearch.style.display = isNew ? 'none' : 'inline-flex';
+    setResearchTabsLocked(isNew);
+    if (isNew) switchResearchTab('overview');
+  }
+
+  function renderResearchProjectList() {
+    if (!researchProjectListEl) return;
+    if (cachedResearch.length === 0) {
+      researchProjectListEl.innerHTML = '<p class="admin-text">No research projects yet. Create your first one above.</p>';
+      return;
+    }
+    researchProjectListEl.innerHTML = cachedResearch.map(r => `
+      <button type="button" class="research-project-card ${r.id === selectedResearchId ? 'active' : ''}" data-id="${r.id}">
+        <span class="rp-title">${escapeHtml(r.title)}</span>
+        <span class="rp-meta">${escapeHtml([r.field, r.status].filter(Boolean).join(' • ') || 'Research project')}</span>
+      </button>
+    `).join('');
+
+    researchProjectListEl.querySelectorAll('.research-project-card').forEach(card => {
+      card.addEventListener('click', () => selectResearchProject(card.getAttribute('data-id')));
+    });
+  }
+
+  function selectResearchProject(id) {
+    const item = cachedResearch.find(r => r.id === id);
+    if (!item) return;
+    selectedResearchId = id;
+    renderResearchProjectList();
+    showResearchForm(false);
+
+    if (researchDetailTitleEl) researchDetailTitleEl.textContent = item.title;
+    if (researchIdInput) researchIdInput.value = item.id;
+    researchFields.forEach(f => {
+      if (!f.el) return;
+      if (f.type === 'tags') {
+        f.el.value = Array.isArray(item[f.key]) ? item[f.key].join(', ') : '';
+      } else {
+        f.el.value = (item[f.key] !== undefined && item[f.key] !== null) ? item[f.key] : '';
+      }
+    });
+
+    if (researchImageInput) researchImageInput.value = '';
+    if (researchImagePreview) {
+      if (item.image) {
+        researchImagePreview.src = resolveImageUrl(item.image);
+        researchImagePreview.hidden = false;
+      } else {
+        researchImagePreview.hidden = true;
+        researchImagePreview.removeAttribute('src');
+      }
+    }
+
+    renderResearchTimeline(item);
+    papersTable.renderTable();
+    milestonesTable.renderTable();
+    resourcesTable.renderTable();
+    renderResearchProgress();
+  }
+
+  function renderResearchTimeline(item) {
+    if (!researchTimelineEl) return;
+    const logs = Array.isArray(item.logs) ? [...item.logs].sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || '').localeCompare(a.createdAt || '')) : [];
+    if (logs.length === 0) {
+      researchTimelineEl.innerHTML = '<p class="admin-text">No diary entries yet. Add your first update above.</p>';
+      return;
+    }
+    researchTimelineEl.innerHTML = logs.map(log => `
+      <div class="research-timeline-item">
+        <span class="research-timeline-date">${escapeHtml(log.date || '')}</span>
+        <p class="research-timeline-note">${escapeHtml(log.note)}</p>
+        <button type="button" class="research-timeline-delete" data-log-id="${log.id}">Remove</button>
+      </div>
+    `).join('');
+
+    researchTimelineEl.querySelectorAll('.research-timeline-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!selectedResearchId || !confirm('Remove this diary entry?')) return;
+        try {
+          const res = await authFetch(`${API_BASE}/api/research/${selectedResearchId}/logs/${btn.getAttribute('data-log-id')}`, { method: 'DELETE' });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.message || 'Delete failed');
+          await fetchResearch();
+          renderResearchTimeline(cachedResearch.find(r => r.id === selectedResearchId) || {});
+          renderResearchProgress();
+        } catch (err) {
+          alert(`Could not remove entry: ${err.message}`);
+        }
+      });
+    });
+  }
+
+  // Shared helper powering the Literature / Schedule / Resources tables —
+  // each is a nested array on the selected research project, with its own
+  // add-form, plain JSON POST/PUT/DELETE, and table render.
+  function setupResearchSubTable(cfg) {
+    function getItems() {
+      const project = cachedResearch.find(r => r.id === selectedResearchId);
+      return (project && Array.isArray(project[cfg.fieldName])) ? project[cfg.fieldName] : [];
+    }
+
+    function resetForm() {
+      if (cfg.form) cfg.form.reset();
+      if (cfg.idInput) cfg.idInput.value = '';
+      if (cfg.cancelBtn) cfg.cancelBtn.style.display = 'none';
+      if (cfg.submitBtn) cfg.submitBtn.querySelector('span').textContent = cfg.submitLabels.add;
+    }
+
+    function renderTable() {
+      if (!cfg.tableBody) return;
+      const items = getItems();
+      if (items.length === 0) {
+        cfg.tableBody.innerHTML = `<tr><td colspan="${cfg.colSpan}" class="research-table-empty">${cfg.emptyText}</td></tr>`;
+        return;
+      }
+      cfg.tableBody.innerHTML = items.map(cfg.renderRow).join('');
+
+      cfg.tableBody.querySelectorAll('.rt-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = items.find(i => i.id === btn.getAttribute('data-id'));
+          if (!item) return;
+          if (cfg.idInput) cfg.idInput.value = item.id;
+          cfg.fields.forEach(f => {
+            if (f.el) f.el.value = (item[f.key] !== undefined && item[f.key] !== null) ? item[f.key] : '';
+          });
+          if (cfg.cancelBtn) cfg.cancelBtn.style.display = 'inline-flex';
+          if (cfg.submitBtn) cfg.submitBtn.querySelector('span').textContent = cfg.submitLabels.edit;
+          if (cfg.fields[0] && cfg.fields[0].el) cfg.fields[0].el.focus();
+        });
+      });
+
+      cfg.tableBody.querySelectorAll('.rt-delete').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!selectedResearchId || !confirm(cfg.confirmDeleteText)) return;
+          try {
+            const res = await authFetch(`${API_BASE}/api/research/${selectedResearchId}/${cfg.fieldName}/${btn.getAttribute('data-id')}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.message || 'Delete failed');
+            await fetchResearch();
+            renderTable();
+            renderResearchProgress();
+          } catch (err) {
+            alert(`Could not remove: ${err.message}`);
+          }
+        });
+      });
+    }
+
+    if (cfg.cancelBtn) cfg.cancelBtn.addEventListener('click', resetForm);
+
+    if (cfg.form) {
+      cfg.form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedResearchId) return;
+
+        const payload = {};
+        cfg.fields.forEach(f => { payload[f.key] = f.el ? f.el.value.trim() : ''; });
+
+        const existingId = cfg.idInput ? cfg.idInput.value : '';
+        const url = existingId
+          ? `${API_BASE}/api/research/${selectedResearchId}/${cfg.fieldName}/${existingId}`
+          : `${API_BASE}/api/research/${selectedResearchId}/${cfg.fieldName}`;
+        const method = existingId ? 'PUT' : 'POST';
+
+        try {
+          const res = await authFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.message || 'Save failed');
+          await fetchResearch();
+          renderTable();
+          renderResearchProgress();
+          resetForm();
+        } catch (err) {
+          alert(`Could not save: ${err.message}`);
+        }
+      });
+    }
+
+    return { renderTable, resetForm };
+  }
+
+  const papersTable = setupResearchSubTable({
+    fieldName: 'papers',
+    form: document.getElementById('research-paper-form'),
+    idInput: document.getElementById('paper-edit-id'),
+    cancelBtn: document.getElementById('btn-cancel-paper-edit'),
+    submitBtn: document.getElementById('btn-save-paper'),
+    submitLabels: { add: 'Add Paper', edit: 'Update Paper' },
+    tableBody: document.getElementById('papers-table-body'),
+    colSpan: 6,
+    emptyText: 'No papers added yet.',
+    confirmDeleteText: 'Remove this paper?',
+    fields: [
+      { key: 'title', el: document.getElementById('paper-title') },
+      { key: 'authors', el: document.getElementById('paper-authors') },
+      { key: 'link', el: document.getElementById('paper-link') },
+      { key: 'status', el: document.getElementById('paper-status') },
+      { key: 'progress', el: document.getElementById('paper-progress') },
+      { key: 'notes', el: document.getElementById('paper-notes') }
+    ],
+    renderRow: (p) => `
+      <tr>
+        <td>${p.link ? `<a href="${escapeHtml(p.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(p.title)}</a>` : escapeHtml(p.title)}</td>
+        <td>${escapeHtml(p.authors || '')}</td>
+        <td><span class="research-status-badge status-${(p.status || 'Not Started').replace(/\s+/g, '-').toLowerCase()}">${escapeHtml(p.status || 'Not Started')}</span></td>
+        <td>${p.progress !== undefined && p.progress !== '' && p.progress !== null ? escapeHtml(String(p.progress)) + '%' : '—'}</td>
+        <td>${escapeHtml(p.notes || '')}</td>
+        <td class="research-table-actions">
+          <button type="button" class="btn-icon-action rt-edit" data-id="${p.id}">Edit</button>
+          <button type="button" class="btn-icon-action rt-delete" data-id="${p.id}">Delete</button>
+        </td>
+      </tr>`
+  });
+
+  const milestonesTable = setupResearchSubTable({
+    fieldName: 'milestones',
+    form: document.getElementById('research-milestone-form'),
+    idInput: document.getElementById('milestone-edit-id'),
+    cancelBtn: document.getElementById('btn-cancel-milestone-edit'),
+    submitBtn: document.getElementById('btn-save-milestone'),
+    submitLabels: { add: 'Add Phase', edit: 'Update Phase' },
+    tableBody: document.getElementById('milestones-table-body'),
+    colSpan: 6,
+    emptyText: 'No schedule phases added yet.',
+    confirmDeleteText: 'Remove this phase?',
+    fields: [
+      { key: 'task', el: document.getElementById('milestone-task') },
+      { key: 'startDate', el: document.getElementById('milestone-start') },
+      { key: 'endDate', el: document.getElementById('milestone-end') },
+      { key: 'status', el: document.getElementById('milestone-status') },
+      { key: 'notes', el: document.getElementById('milestone-notes') }
+    ],
+    renderRow: (m) => `
+      <tr>
+        <td>${escapeHtml(m.task)}</td>
+        <td>${escapeHtml(m.startDate || '—')}</td>
+        <td>${escapeHtml(m.endDate || '—')}</td>
+        <td><span class="research-status-badge status-${(m.status || 'Not Started').replace(/\s+/g, '-').toLowerCase()}">${escapeHtml(m.status || 'Not Started')}</span></td>
+        <td>${escapeHtml(m.notes || '')}</td>
+        <td class="research-table-actions">
+          <button type="button" class="btn-icon-action rt-edit" data-id="${m.id}">Edit</button>
+          <button type="button" class="btn-icon-action rt-delete" data-id="${m.id}">Delete</button>
+        </td>
+      </tr>`
+  });
+
+  const resourcesTable = setupResearchSubTable({
+    fieldName: 'resources',
+    form: document.getElementById('research-resource-form'),
+    idInput: document.getElementById('resource-edit-id'),
+    cancelBtn: document.getElementById('btn-cancel-resource-edit'),
+    submitBtn: document.getElementById('btn-save-resource'),
+    submitLabels: { add: 'Add Resource', edit: 'Update Resource' },
+    tableBody: document.getElementById('resources-table-body'),
+    colSpan: 5,
+    emptyText: 'No resources saved yet.',
+    confirmDeleteText: 'Remove this resource?',
+    fields: [
+      { key: 'title', el: document.getElementById('resource-title') },
+      { key: 'url', el: document.getElementById('resource-url') },
+      { key: 'type', el: document.getElementById('resource-type') },
+      { key: 'notes', el: document.getElementById('resource-notes') }
+    ],
+    renderRow: (r) => `
+      <tr>
+        <td>${escapeHtml(r.title)}</td>
+        <td>${escapeHtml(r.type || 'Other')}</td>
+        <td>${r.url ? `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer">Open</a>` : '—'}</td>
+        <td>${escapeHtml(r.notes || '')}</td>
+        <td class="research-table-actions">
+          <button type="button" class="btn-icon-action rt-edit" data-id="${r.id}">Edit</button>
+          <button type="button" class="btn-icon-action rt-delete" data-id="${r.id}">Delete</button>
+        </td>
+      </tr>`
+  });
+
+  // Progress tab: pure-CSS donut charts (conic-gradient) + stacked status
+  // bars built from the papers/milestones/logs already cached — no chart
+  // library needed.
+  function renderResearchProgress() {
+    if (!researchProgressGrid || !selectedResearchId) return;
+    const project = cachedResearch.find(r => r.id === selectedResearchId);
+    if (!project) return;
+
+    const papers = Array.isArray(project.papers) ? project.papers : [];
+    const milestones = Array.isArray(project.milestones) ? project.milestones : [];
+    const logs = Array.isArray(project.logs) ? project.logs : [];
+
+    function countByStatus(list) {
+      const counts = { 'Not Started': 0, 'In Progress': 0, Completed: 0 };
+      list.forEach(item => {
+        const s = item.status || 'Not Started';
+        counts[s] = (counts[s] || 0) + 1;
+      });
+      return counts;
+    }
+
+    const paperCounts = countByStatus(papers);
+    const milestoneCounts = countByStatus(milestones);
+    const totalPapers = papers.length;
+    const totalMilestones = milestones.length;
+
+    const avgProgress = totalPapers > 0
+      ? Math.round(papers.reduce((sum, p) => {
+          const pct = parseInt(p.progress, 10);
+          return sum + (Number.isFinite(pct) ? pct : (p.status === 'Completed' ? 100 : 0));
+        }, 0) / totalPapers)
+      : 0;
+    const milestonePct = totalMilestones > 0 ? Math.round((milestoneCounts.Completed / totalMilestones) * 100) : 0;
+
+    function donut(pct, color) {
+      return `<div class="research-donut" style="--pct:${pct}; --donut-color:${color};"><span class="research-donut-value">${pct}%</span></div>`;
+    }
+
+    function statusBar(counts, total) {
+      if (total === 0) return '<p class="admin-text">No data yet.</p>';
+      const pct = (n) => Math.round((n / total) * 100);
+      return `
+        <div class="research-stackbar">
+          <div class="research-stackbar-seg seg-completed" style="width:${pct(counts.Completed)}%"></div>
+          <div class="research-stackbar-seg seg-inprogress" style="width:${pct(counts['In Progress'])}%"></div>
+          <div class="research-stackbar-seg seg-notstarted" style="width:${pct(counts['Not Started'])}%"></div>
+        </div>
+        <div class="research-stackbar-legend">
+          <span><i class="dot dot-completed"></i>Completed (${counts.Completed})</span>
+          <span><i class="dot dot-inprogress"></i>In Progress (${counts['In Progress']})</span>
+          <span><i class="dot dot-notstarted"></i>Not Started (${counts['Not Started']})</span>
+        </div>`;
+    }
+
+    researchProgressGrid.innerHTML = `
+      <div class="research-chart-card">
+        <h5>Average Reading Progress</h5>
+        ${donut(avgProgress, 'var(--accent-primary)')}
+        <p class="admin-text">${paperCounts.Completed} of ${totalPapers} papers completed</p>
+      </div>
+      <div class="research-chart-card">
+        <h5>Milestones Completed</h5>
+        ${donut(milestonePct, 'var(--accent-secondary)')}
+        <p class="admin-text">${milestoneCounts.Completed} of ${totalMilestones} phases done</p>
+      </div>
+      <div class="research-chart-card research-chart-wide">
+        <h5>Literature Review Breakdown</h5>
+        ${statusBar(paperCounts, totalPapers)}
+      </div>
+      <div class="research-chart-card research-chart-wide">
+        <h5>Schedule Breakdown</h5>
+        ${statusBar(milestoneCounts, totalMilestones)}
+      </div>
+      <div class="research-chart-card research-chart-wide">
+        <h5>Diary Activity</h5>
+        <p class="admin-text">${logs.length} ${logs.length === 1 ? 'entry' : 'entries'} logged so far.</p>
+      </div>
+    `;
+  }
+
+  if (researchImageInput && researchImagePreview) {
+    researchImageInput.addEventListener('change', () => {
+      const file = researchImageInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        researchImagePreview.src = e.target.result;
+        researchImagePreview.hidden = false;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (btnNewResearch) {
+    btnNewResearch.addEventListener('click', () => {
+      selectedResearchId = null;
+      renderResearchProjectList();
+      showResearchForm(true);
+      if (researchForm) researchForm.reset();
+      if (researchIdInput) researchIdInput.value = '';
+      if (researchDetailTitleEl) researchDetailTitleEl.textContent = 'New Research Project';
+      if (researchImagePreview) {
+        researchImagePreview.hidden = true;
+        researchImagePreview.removeAttribute('src');
+      }
+      if (researchTimelineEl) researchTimelineEl.innerHTML = '';
+      papersTable.renderTable();
+      milestonesTable.renderTable();
+      resourcesTable.renderTable();
+      if (researchProgressGrid) researchProgressGrid.innerHTML = '<p class="admin-text">Save the project first to see progress charts.</p>';
+      const titleField = researchFields.find(f => f.key === 'title');
+      if (titleField && titleField.el) titleField.el.focus();
+    });
+  }
+
+  if (researchForm) {
+    researchForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const titleField = researchFields.find(f => f.key === 'title');
+      if (!titleField.el || !titleField.el.value.trim()) {
+        alert('Please enter a title.');
+        return;
+      }
+
+      const formData = new FormData();
+      researchFields.forEach(f => {
+        if (!f.el) return;
+        formData.append(f.key, f.el.value.trim());
+      });
+      if (researchImageInput && researchImageInput.files[0]) {
+        formData.append('image', researchImageInput.files[0]);
+      }
+
+      const url = selectedResearchId ? `${API_BASE}/api/research/${selectedResearchId}` : `${API_BASE}/api/research`;
+      const method = selectedResearchId ? 'PUT' : 'POST';
+
+      const saveBtn = document.getElementById('btn-save-research');
+      if (saveBtn) saveBtn.disabled = true;
+
+      try {
+        const res = await authFetch(url, { method, body: formData });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || 'Save failed');
+
+        await fetchResearch();
+        selectResearchProject(json.data.id);
+      } catch (err) {
+        alert(`Could not save: ${err.message}`);
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
+      }
+    });
+  }
+
+  if (btnDeleteResearch) {
+    btnDeleteResearch.addEventListener('click', async () => {
+      if (!selectedResearchId || !confirm('Delete this entire research project, including its diary, papers, schedule and resources?')) return;
+      try {
+        const res = await authFetch(`${API_BASE}/api/research/${selectedResearchId}`, { method: 'DELETE' });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || 'Delete failed');
+        await fetchResearch();
+        showResearchEmptyState();
+      } catch (err) {
+        alert(`Could not delete: ${err.message}`);
+      }
+    });
+  }
+
+  if (researchDiaryForm) {
+    researchDiaryForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!selectedResearchId) return;
+
+      const dateInput = document.getElementById('diary-date');
+      const noteInput = document.getElementById('diary-note');
+      if (!noteInput || !noteInput.value.trim()) return;
+
+      try {
+        const res = await authFetch(`${API_BASE}/api/research/${selectedResearchId}/logs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: dateInput ? dateInput.value : '', note: noteInput.value.trim() })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || 'Could not add entry');
+
+        await fetchResearch();
+        renderResearchTimeline(cachedResearch.find(r => r.id === selectedResearchId) || {});
+        renderResearchProgress();
+        noteInput.value = '';
+        if (dateInput) dateInput.value = '';
+      } catch (err) {
+        alert(`Could not add diary entry: ${err.message}`);
+      }
+    });
+  }
 
   /* ==================== 11. SKILLS RENDERING (grouped by category) ==================== */
   async function renderSkills() {
@@ -1665,6 +2245,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (certModal && certModal.classList.contains('open')) closeCertModal();
+      if (researchWorkspace && researchWorkspace.classList.contains('open')) closeResearchWorkspace();
       if (adminModal && adminModal.classList.contains('open')) closeAdminModal();
       if (loginModal && loginModal.classList.contains('open')) {
         closeLoginModal();

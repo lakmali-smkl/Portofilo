@@ -1,9 +1,7 @@
 const dns = require('dns');
 const mongoose = require('mongoose');
 
-// Some networks/ISP DNS servers refuse the SRV lookup that
-// "mongodb+srv://" connection strings need, even though the hostname
-// resolves fine otherwise. Google/Cloudflare DNS reliably support it.
+
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 async function connectDB() {

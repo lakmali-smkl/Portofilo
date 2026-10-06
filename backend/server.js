@@ -347,6 +347,14 @@ const RESOURCES = {
     arrayFields: [],
     numberFields: [],
     seed: () => [] // no fabricated defaults — the owner adds their own
+  },
+  research: {
+    label: 'Research Project',
+    hasImage: true,
+    private: true, // GET is also owner-only — never shown on the public site
+    arrayFields: ['tags'],
+    numberFields: [],
+    seed: () => []
   }
 };
 
@@ -663,8 +671,10 @@ Object.entries(RESOURCES).forEach(([name, def]) => {
   // req.body, even for resources (like skills) that don't store an image.
   const uploadMiddleware = upload.single('image');
 
-  // GET all (public)
-  app.get(`/api/${name}`, async (req, res) => {
+  // GET all — public, except resources marked `private: true` (owner only,
+  // never exposed to site visitors even via a direct API call).
+  const getGuards = def.private ? [requireAuth] : [];
+  app.get(`/api/${name}`, ...getGuards, async (req, res) => {
     const items = await Model.find({}).sort({ createdAt: -1 }).lean();
     res.json({ success: true, data: items });
   });
@@ -726,6 +736,111 @@ Object.entries(RESOURCES).forEach(([name, def]) => {
     }
   });
 });
+
+// ==================== RESEARCH DIARY (nested log entries) ====================
+// A running, dated journal per research project — like a project diary.
+// Still fully private: both routes require the owner's login.
+const Research = resourceModel('research');
+
+app.post('/api/research/:id/logs', requireAuth, async (req, res) => {
+  try {
+    const { date, note } = req.body;
+    if (!note || !note.trim()) {
+      return res.status(400).json({ success: false, message: 'A note is required.' });
+    }
+    const entry = {
+      id: uuidv4(),
+      date: date || new Date().toISOString().slice(0, 10),
+      note: note.trim(),
+      createdAt: new Date().toISOString()
+    };
+    const updated = await Research.findOneAndUpdate(
+      { id: req.params.id },
+      { $push: { logs: entry } },
+      { new: true }
+    ).lean();
+    if (!updated) return res.status(404).json({ success: false, message: 'Research project not found' });
+    res.status(201).json({ success: true, data: updated, message: 'Diary entry added.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/research/:id/logs/:logId', requireAuth, async (req, res) => {
+  try {
+    const updated = await Research.findOneAndUpdate(
+      { id: req.params.id },
+      { $pull: { logs: { id: req.params.logId } } },
+      { new: true }
+    ).lean();
+    if (!updated) return res.status(404).json({ success: false, message: 'Research project not found' });
+    res.json({ success: true, data: updated, message: 'Diary entry removed.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Three more nested sub-tables on a research project — papers (literature),
+// milestones (schedule), and resources (saved links) — all shaped the same
+// way, so one generic add/edit/delete registrar covers all three.
+function registerResearchSubTable(fieldName, requiredField) {
+  app.post(`/api/research/:id/${fieldName}`, requireAuth, async (req, res) => {
+    try {
+      const body = req.body || {};
+      if (!body[requiredField] || !String(body[requiredField]).trim()) {
+        return res.status(400).json({ success: false, message: `${requiredField} is required.` });
+      }
+      const entry = { id: uuidv4(), createdAt: new Date().toISOString(), ...body };
+      const updated = await Research.findOneAndUpdate(
+        { id: req.params.id },
+        { $push: { [fieldName]: entry } },
+        { new: true }
+      ).lean();
+      if (!updated) return res.status(404).json({ success: false, message: 'Research project not found' });
+      res.status(201).json({ success: true, data: updated, message: 'Added.' });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  app.put(`/api/research/:id/${fieldName}/:itemId`, requireAuth, async (req, res) => {
+    try {
+      const research = await Research.findOne({ id: req.params.id }).lean();
+      if (!research) return res.status(404).json({ success: false, message: 'Research project not found' });
+      const list = Array.isArray(research[fieldName]) ? research[fieldName] : [];
+      const index = list.findIndex(x => x.id === req.params.itemId);
+      if (index === -1) return res.status(404).json({ success: false, message: 'Entry not found' });
+
+      list[index] = { ...list[index], ...req.body, updatedAt: new Date().toISOString() };
+      const updated = await Research.findOneAndUpdate(
+        { id: req.params.id },
+        { $set: { [fieldName]: list } },
+        { new: true }
+      ).lean();
+      res.json({ success: true, data: updated, message: 'Updated.' });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  app.delete(`/api/research/:id/${fieldName}/:itemId`, requireAuth, async (req, res) => {
+    try {
+      const updated = await Research.findOneAndUpdate(
+        { id: req.params.id },
+        { $pull: { [fieldName]: { id: req.params.itemId } } },
+        { new: true }
+      ).lean();
+      if (!updated) return res.status(404).json({ success: false, message: 'Research project not found' });
+      res.json({ success: true, data: updated, message: 'Removed.' });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+}
+
+registerResearchSubTable('papers', 'title');
+registerResearchSubTable('milestones', 'task');
+registerResearchSubTable('resources', 'title');
 
 // ==================== RESET ENDPOINT ====================
 
