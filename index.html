@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!--
+  ==========================================================================
+    KASUNIKA - PERSONAL PORTFOLIO WEBSITE
+  ==========================================================================
+    CUSTOMIZATION:
+    Almost everything on this page (Profile, About, Skills, Education,
+    Projects, Experience, Events, Certificates) is loaded from the backend
+    API at runtime and managed from the "Manage Projects" panel in the UI
+    (owner login required) -- no need to hand-edit this file. See README.md
+    for setup instructions.
+
+    Two things still live as files rather than form fields:
+      - images/profile.jpg      -> first-paint fallback photo, replace it
+                                    directly, or upload one via the panel
+      - assets/Kasunika_CV.pdf  -> place your CV PDF in the /assets folder
+  ==========================================================================
+  -->
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Kasunika - University of Jaffna Student, Aspiring Software Developer, and Technology Enthusiast. Explore my portfolio, projects, skills, and activities." />
+  <meta name="keywords" content="Kasunika, Portfolio, Software Developer, University of Jaffna, Web Development, Programming, Database, IEEE" />
+  <meta name="author" content="Kasunika" />
+
+  <title>Kasunika | Portfolio</title>
+
+  <!-- Google Fonts for Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ==================== NAVIGATION BAR ==================== -->
+  <header class="header" id="header">
+    <div class="container nav-container">
+      <a href="#home" class="logo" aria-label="Kasunika Home">
+        <span class="logo-symbol">&lt;/&gt;</span>
+        <span class="logo-text">KASUNIKA</span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="nav-menu" id="nav-menu" aria-label="Main Navigation">
+        <ul class="nav-list">
+          <li class="nav-item"><a href="#home" class="nav-link active">Home</a></li>
+          <li class="nav-item"><a href="#about" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="#skills" class="nav-link">Skills</a></li>
+          <li class="nav-item"><a href="#education" class="nav-link">Education</a></li>
+          <li class="nav-item"><a href="#projects" class="nav-link">Projects</a></li>
+          <li class="nav-item"><a href="#experience" class="nav-link">Experience</a></li>
+          <li class="nav-item"><a href="#events" class="nav-link">Events</a></li>
+          <li class="nav-item"><a href="#certificates" class="nav-link">Certificates</a></li>
+          <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
+        </ul>
+      </nav>
+
+      <!-- Header Action & Mobile Toggle -->
+      <div class="nav-actions">
+        <a href="#contact" class="btn btn-sm btn-outline nav-cta">Let's Connect</a>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ==================== HERO SECTION ==================== -->
+    <section class="hero section" id="home">
+      <div class="hero-bg-glow hero-bg-glow-1"></div>
+      <div class="hero-bg-glow hero-bg-glow-2"></div>
+
+      <div class="container hero-container">
+        <div class="hero-content reveal">
+          <div class="badge-pill">
+            <span class="badge-dot"></span>
+            <span>University of Jaffna &bull; Tech Enthusiast</span>
+          </div>
+
+          <h1 class="hero-title">
+            Hi, I'm <span class="gradient-text">Kasunika</span>
+          </h1>
+
+          <div class="hero-typed-container">
+            <span class="typed-text" id="typed-text"></span>
+            <span class="typed-cursor" aria-hidden="true">|</span>
+          </div>
+
+          <p class="hero-description">
+            A passionate university student driven by problem solving, software development, databases, and continuous learning. Focused on building impactful solutions and collaborating through student initiatives.
+          </p>
+
+          <div class="hero-cta-group">
+            <a href="#projects" class="btn btn-primary">
+              <span>View My Projects</span>
+              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a href="#cv" class="btn btn-secondary">
+              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download CV</span>
+            </a>
+            <a href="#contact" class="btn btn-outline">
+              <span>Contact Me</span>
+            </a>
+          </div>
+
+          <!-- Hero Social Links -->
+          <div class="hero-socials">
+            <span class="social-label">Connect with me:</span>
+            <div class="social-links">
+              <!-- LinkedIn Placeholder -->
+              <a href="https://linkedin.com/in/[Your-LinkedIn]" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn Profile" title="LinkedIn: [Your LinkedIn]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+              </a>
+              <!-- GitHub Placeholder -->
+              <a href="https://github.com/[Your-GitHub]" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="GitHub Profile" title="GitHub: [Your GitHub]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+              </a>
+              <!-- Email Placeholder -->
+              <a href="mailto:[Your-Email]" class="social-link" aria-label="Email Kasunika" title="Email: [Your Email]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Image Container with Robust Fallback -->
+        <div class="hero-image-wrapper reveal">
+          <div class="hero-card">
+            <div class="profile-frame">
+              <img 
+                src="images/profile.jpg" 
+                alt="Kasunika Profile Photo" 
+                class="profile-img" 
+                id="profile-img"
+                loading="eager"
+              />
+              <!-- Fallback avatar shown if image does not exist -->
+              <div class="profile-placeholder" id="profile-fallback">
+                <div class="placeholder-avatar">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <span class="placeholder-name">Kasunika</span>
+                <span class="placeholder-tag">University of Jaffna</span>
+              </div>
+            </div>
+
+            <!-- Floating Status Badge -->
+            <div class="floating-badge badge-status">
+              <span class="status-indicator"></span>
+              <div>
+                <p class="badge-title">Open to Internships</p>
+                <p class="badge-sub">&amp; IT Opportunities</p>
+              </div>
+            </div>
+
+            <!-- Floating Tech Badge -->
+            <div class="floating-badge badge-tech">
+              <div class="tech-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div>
+                <p class="badge-title">Tech Learner</p>
+                <p class="badge-sub">Software &amp; Databases</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ABOUT ME SECTION ==================== -->
+    <section class="about section" id="about">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Introduction</span>
+          <h2 class="section-title">About <span class="gradient-text">Me</span></h2>
+          <p class="section-subtitle">A glimpse into my academic journey, technical focus, and aspirations</p>
+        </div>
+
+        <div class="about-grid">
+          <div class="about-card about-bio-card reveal">
+            <h3 class="about-heading">
+              <span class="text-accent">Undergraduate</span> at University of Jaffna
+            </h3>
+            <div id="about-text-container">
+              <!-- Dynamically rendered from profile.about by script.js -->
+            </div>
+
+            <div class="about-highlights-list">
+              <div class="highlight-item">
+                <div class="highlight-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                </div>
+                <span><strong>Education:</strong> University of Jaffna</span>
+              </div>
+              <div class="highlight-item">
+                <div class="highlight-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+                </div>
+                <span><strong>Activities:</strong> IEEE &amp; Student Volunteering</span>
+              </div>
+              <div class="highlight-item">
+                <div class="highlight-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <span><strong>Interests:</strong> Software, Databases, Web &amp; Problem Solving</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Key Highlights Grid (No fabricated statistics) -->
+          <div class="about-stats-column">
+            <div class="stat-card reveal">
+              <div class="stat-icon-wrapper">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+              </div>
+              <h4 class="stat-title">University Student</h4>
+              <p class="stat-desc">Pursuing higher education with dedication at University of Jaffna</p>
+            </div>
+
+            <div class="stat-card reveal">
+              <div class="stat-icon-wrapper">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              </div>
+              <h4 class="stat-title">Technology Enthusiast</h4>
+              <p class="stat-desc">Passionate about emerging tech, programming, and clean code</p>
+            </div>
+
+            <div class="stat-card reveal">
+              <div class="stat-icon-wrapper">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+              </div>
+              <h4 class="stat-title">Project Learner</h4>
+              <p class="stat-desc">Building hands-on academic and exploratory software projects</p>
+            </div>
+
+            <div class="stat-card reveal">
+              <div class="stat-icon-wrapper">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <h4 class="stat-title">Team Player</h4>
+              <p class="stat-desc">Active in IEEE events, peer collaboration, and community initiatives</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SKILLS SECTION ==================== -->
+    <section class="skills section" id="skills">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Technical Competencies</span>
+          <h2 class="section-title">Skills &amp; <span class="gradient-text">Expertise</span></h2>
+          <p class="section-subtitle">Core technologies and professional abilities developed through academic study and practice</p>
+        </div>
+
+        <div class="skills-grid" id="skills-grid">
+          <!-- Dynamically rendered (grouped by category) by script.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== EDUCATION SECTION ==================== -->
+    <section class="education section" id="education">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Academic Background</span>
+          <h2 class="section-title">My <span class="gradient-text">Education</span></h2>
+          <p class="section-subtitle">Academic timeline and foundational learning path</p>
+        </div>
+
+        <div class="timeline reveal" id="education-timeline">
+          <!-- Dynamically rendered by script.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PROJECTS SECTION ==================== -->
+    <section class="projects section" id="projects">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Portfolio Showcase</span>
+          <h2 class="section-title">Featured <span class="gradient-text">Projects</span></h2>
+          <p class="section-subtitle">Academic and practical software projects developed with modern technologies</p>
+        </div>
+
+        <!-- Project Filtering Buttons -->
+        <div class="filter-wrapper reveal">
+          <div class="filter-controls" role="tablist" aria-label="Project Categories">
+            <button class="filter-btn active" data-filter="all" role="tab" aria-selected="true">All</button>
+            <button class="filter-btn" data-filter="web" role="tab" aria-selected="false">Web</button>
+            <button class="filter-btn" data-filter="database" role="tab" aria-selected="false">Database</button>
+            <button class="filter-btn" data-filter="programming" role="tab" aria-selected="false">Programming</button>
+          </div>
+        </div>
+
+        <!-- Project Cards Grid -->
+        <div class="projects-grid" id="projects-grid">
+          
+          <!-- Project 1: Database Management System -->
+          <article class="project-card reveal" data-category="database">
+            <div class="project-banner project-banner-1">
+              <div class="project-badge">Database</div>
+              <div class="banner-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              </div>
+            </div>
+
+            <div class="project-body">
+              <h3 class="project-title">Database Management System</h3>
+              <p class="project-placeholder-notice">[Editable Placeholder Project]</p>
+              <p class="project-description">
+                A relational database solution designed with optimized schema structures, normalized tables, complex queries, and transaction management to store and retrieve data reliably.
+              </p>
+
+              <div class="project-tech-stack">
+                <span class="tech-tag">SQL</span>
+                <span class="tech-tag">MariaDB / MySQL</span>
+                <span class="tech-tag">ER Modeling</span>
+                <span class="tech-tag">Schema Design</span>
+              </div>
+
+              <div class="project-actions">
+                <a href="https://github.com/[Your-GitHub]" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/></svg>
+                  <span>GitHub</span>
+                </a>
+                <a href="#contact" class="btn btn-sm btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  <span>Live Demo</span>
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <!-- Project 2: Student Management System -->
+          <article class="project-card reveal" data-category="programming">
+            <div class="project-banner project-banner-2">
+              <div class="project-badge">Programming</div>
+              <div class="banner-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+            </div>
+
+            <div class="project-body">
+              <h3 class="project-title">Student Management System</h3>
+              <p class="project-placeholder-notice">[Editable Placeholder Project]</p>
+              <p class="project-description">
+                An application built to streamline student record administration, course registrations, and grade tracking with a structured data architecture and intuitive interface.
+              </p>
+
+              <div class="project-tech-stack">
+                <span class="tech-tag">Java / Python</span>
+                <span class="tech-tag">OOP</span>
+                <span class="tech-tag">SQL Database</span>
+                <span class="tech-tag">CRUD Operations</span>
+              </div>
+
+              <div class="project-actions">
+                <a href="https://github.com/[Your-GitHub]" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/></svg>
+                  <span>GitHub</span>
+                </a>
+                <a href="#contact" class="btn btn-sm btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  <span>Live Demo</span>
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <!-- Project 3: Personal Portfolio Website -->
+          <article class="project-card reveal" data-category="web">
+            <div class="project-banner project-banner-3">
+              <div class="project-badge">Web</div>
+              <div class="banner-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+            </div>
+
+            <div class="project-body">
+              <h3 class="project-title">Personal Portfolio Website</h3>
+              <p class="project-placeholder-notice">[Current Project]</p>
+              <p class="project-description">
+                A modern, responsive personal portfolio website engineered with clean HTML5, custom CSS3, and vanilla JavaScript featuring dynamic interactions and smooth animations.
+              </p>
+
+              <div class="project-tech-stack">
+                <span class="tech-tag">HTML5</span>
+                <span class="tech-tag">CSS3</span>
+                <span class="tech-tag">Vanilla JavaScript</span>
+                <span class="tech-tag">Responsive Design</span>
+              </div>
+
+              <div class="project-actions">
+                <a href="https://github.com/[Your-GitHub]" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/></svg>
+                  <span>GitHub</span>
+                </a>
+                <a href="#home" class="btn btn-sm btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  <span>Live Demo</span>
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <!-- Project 4: Interactive Web Application -->
+          <article class="project-card reveal" data-category="web">
+            <div class="project-banner project-banner-4">
+              <div class="project-badge">Web</div>
+              <div class="banner-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+              </div>
+            </div>
+
+            <div class="project-body">
+              <h3 class="project-title">Interactive Web Application</h3>
+              <p class="project-placeholder-notice">[Editable Placeholder Project]</p>
+              <p class="project-description">
+                A dynamic client-side web application implementing asynchronous data handling, responsive user interface components, and state management logic.
+              </p>
+
+              <div class="project-tech-stack">
+                <span class="tech-tag">JavaScript ES6</span>
+                <span class="tech-tag">REST APIs</span>
+                <span class="tech-tag">CSS Flexbox/Grid</span>
+                <span class="tech-tag">DOM Manipulation</span>
+              </div>
+
+              <div class="project-actions">
+                <a href="https://github.com/[Your-GitHub]" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/></svg>
+                  <span>GitHub</span>
+                </a>
+                <a href="#contact" class="btn btn-sm btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  <span>Live Demo</span>
+                </a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== EXPERIENCE & ACTIVITIES SECTION ==================== -->
+    <section class="experience section" id="experience">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Engagement &amp; Leadership</span>
+          <h2 class="section-title">Experience &amp; <span class="gradient-text">Activities</span></h2>
+          <p class="section-subtitle">Student organizations, volunteering, workshops, and extracurricular contributions</p>
+        </div>
+
+        <div class="activity-cards-grid" id="experience-grid">
+          <!-- Dynamically rendered by script.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== EVENTS SECTION ==================== -->
+    <section class="events section" id="events">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Participation</span>
+          <h2 class="section-title">Events &amp; <span class="gradient-text">Competitions</span></h2>
+          <p class="section-subtitle">Coding competitions, conferences, and tech talks I've taken part in</p>
+        </div>
+
+        <div class="projects-grid" id="events-grid">
+          <!-- Dynamically rendered by script.js -->
+        </div>
+        <p class="admin-text" id="events-empty-msg" hidden>No events added yet — check back soon.</p>
+      </div>
+    </section>
+
+    <!-- ==================== CERTIFICATES & ACHIEVEMENTS SECTION ==================== -->
+    <section class="certificates section" id="certificates">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Credentials</span>
+          <h2 class="section-title">Certificates &amp; <span class="gradient-text">Achievements</span></h2>
+          <p class="section-subtitle">Verified courses, certifications, and academic milestones</p>
+        </div>
+
+        <div class="certificates-grid" id="certificates-grid">
+          <!-- Dynamically rendered by script.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== CV SECTION ==================== -->
+    <section class="cv-section section" id="cv">
+      <div class="container">
+        <div class="cv-card reveal">
+          <div class="cv-content">
+            <div class="cv-icon-wrap">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div>
+              <h2 class="cv-title">Curriculum Vitae</h2>
+              <p class="cv-description">
+                Download or view my updated academic curriculum vitae summarizing my education at University of Jaffna, technical skills, coursework, and activities.
+              </p>
+            </div>
+          </div>
+
+          <div class="cv-actions">
+            <!-- Direct Download Button -->
+            <a href="assets/Kasunika_CV.pdf" download="Kasunika_CV.pdf" class="btn btn-primary" id="btn-download-cv">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download My CV</span>
+            </a>
+
+            <!-- View CV in new tab / modal -->
+            <a href="assets/Kasunika_CV.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-outline" id="btn-view-cv">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>View CV (PDF)</span>
+            </a>
+          </div>
+
+          <p class="cv-notice">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Place your <code>Kasunika_CV.pdf</code> file into the <code>assets/</code> folder to make download &amp; view fully active.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== CONTACT SECTION ==================== -->
+    <section class="contact section" id="contact">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Get In Touch</span>
+          <h2 class="section-title">Contact <span class="gradient-text">Me</span></h2>
+          <p class="section-subtitle">Feel free to reach out for internship opportunities, collaborations, or inquiries</p>
+        </div>
+
+        <div class="contact-grid">
+          <!-- Contact Info Side -->
+          <div class="contact-info-card reveal">
+            <h3 class="contact-info-heading">Let's Connect &amp; Collaborate</h3>
+            <p class="contact-info-text">
+              I am actively seeking internship opportunities, collaborative software projects, and learning experiences. Feel free to send a message!
+            </p>
+
+            <div class="contact-details-list">
+              <!-- Email Card -->
+              <div class="contact-detail-item">
+                <div class="contact-detail-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                </div>
+                <div>
+                  <span class="contact-detail-label">Email:</span>
+                  <a href="mailto:[Your-Email]" class="contact-detail-val" id="contact-email-link">[Your Email]</a>
+                </div>
+              </div>
+
+              <!-- Phone Card (hidden until a phone number is set) -->
+              <div class="contact-detail-item" id="contact-phone-item" hidden>
+                <div class="contact-detail-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <div>
+                  <span class="contact-detail-label">Phone:</span>
+                  <a href="tel:" class="contact-detail-val" id="contact-phone-link">-</a>
+                </div>
+              </div>
+
+              <!-- LinkedIn Card -->
+              <div class="contact-detail-item">
+                <div class="contact-detail-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                </div>
+                <div>
+                  <span class="contact-detail-label">LinkedIn:</span>
+                  <a href="https://linkedin.com/in/[Your-LinkedIn]" target="_blank" rel="noopener noreferrer" class="contact-detail-val" id="contact-linkedin-link">[Your LinkedIn URL]</a>
+                </div>
+              </div>
+
+              <!-- GitHub Card -->
+              <div class="contact-detail-item">
+                <div class="contact-detail-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/></svg>
+                </div>
+                <div>
+                  <span class="contact-detail-label">GitHub:</span>
+                  <a href="https://github.com/[Your-GitHub]" target="_blank" rel="noopener noreferrer" class="contact-detail-val" id="contact-github-link">[Your GitHub URL]</a>
+                </div>
+              </div>
+
+              <!-- Location -->
+              <div class="contact-detail-item">
+                <div class="contact-detail-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                </div>
+                <div>
+                  <span class="contact-detail-label">Location:</span>
+                  <span class="contact-detail-val" id="contact-location-val">University of Jaffna, Sri Lanka</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Form Side -->
+          <div class="contact-form-card reveal">
+            <form id="contact-form" class="contact-form" novalidate>
+              <div class="form-group">
+                <label for="name" class="form-label">Your Name <span class="required">*</span></label>
+                <div class="input-wrapper">
+                  <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-input" 
+                    placeholder="e.g. Alex Silva" 
+                    autocomplete="name"
+                    required 
+                  />
+                  <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <span class="error-msg" id="name-error">Please enter your name</span>
+              </div>
+
+              <div class="form-group">
+                <label for="email" class="form-label">Your Email <span class="required">*</span></label>
+                <div class="input-wrapper">
+                  <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-input" 
+                    placeholder="e.g. alex@example.com" 
+                    autocomplete="email"
+                    required 
+                  />
+                  <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                </div>
+                <span class="error-msg" id="email-error">Please enter a valid email address</span>
+              </div>
+
+              <div class="form-group">
+                <label for="message" class="form-label">Your Message <span class="required">*</span></label>
+                <div class="input-wrapper textarea-wrapper">
+                  <textarea 
+                    id="message" 
+                    name="message" 
+                    rows="5" 
+                    class="form-input form-textarea" 
+                    placeholder="Write your message here..." 
+                    required
+                  ></textarea>
+                </div>
+                <span class="error-msg" id="message-error">Please enter a message before sending</span>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" id="btn-submit">
+                <span>Send Message</span>
+                <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+
+              <!-- Form Status Banner -->
+              <div class="form-status" id="form-status" role="alert" aria-live="polite"></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="container footer-container">
+      <div class="footer-brand">
+        <a href="#home" class="logo">
+          <span class="logo-symbol">&lt;/&gt;</span>
+          <span class="logo-text">KASUNIKA</span>
+        </a>
+        <p class="footer-tagline">
+          University student passionate about software development, databases, and problem solving.
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <h4 class="footer-title">Quick Links</h4>
+        <ul class="footer-nav">
+          <li><a href="#home">Home</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#skills">Skills</a></li>
+          <li><a href="#education">Education</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#experience">Experience</a></li>
+          <li><a href="#certificates">Certificates</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-socials">
+        <h4 class="footer-title">Connect</h4>
+        <div class="social-links">
+          <a href="https://linkedin.com/in/[Your-LinkedIn]" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+          <a href="https://github.com/[Your-GitHub]" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="GitHub">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/></svg>
+          </a>
+          <a href="mailto:[Your-Email]" class="social-link" aria-label="Email">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <p>&copy; <span id="current-year"></span> <strong>KASUNIKA</strong>. All Rights Reserved.</p>
+        <p class="footer-built">Designed &amp; Built with HTML, CSS &amp; JavaScript</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== CERTIFICATE MODAL ==================== -->
+  <div class="modal-backdrop" id="cert-modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button class="modal-close" id="modal-close" aria-label="Close certificate preview">&times;</button>
+      <div class="modal-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+      </div>
+      <span class="modal-tag">Certificate Preview</span>
+      <h3 class="modal-title" id="modal-title">Certificate Title</h3>
+      <div class="modal-meta">
+        <p><strong>Issuing Organization:</strong> <span id="modal-org">Organization</span></p>
+        <p><strong>Date of Completion:</strong> <span id="modal-date">Date</span></p>
+      </div>
+      <p class="modal-details" id="modal-details">Certificate description details will appear here.</p>
+      <div class="modal-action">
+        <button class="btn btn-secondary btn-sm" id="modal-ok-btn">Close Preview</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== OWNER LOGIN MODAL ==================== -->
+  <div class="modal-backdrop login-backdrop" id="login-modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card login-card">
+      <div class="admin-modal-header">
+        <div class="admin-title-wrap">
+          <div class="admin-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div>
+            <h3 class="admin-title">Owner Login</h3>
+            <p class="admin-subtitle">Log in to manage projects, profile, and content</p>
+          </div>
+        </div>
+        <button class="modal-close" id="login-modal-close" aria-label="Close login">&times;</button>
+      </div>
+
+      <form id="login-form" class="admin-form login-form">
+        <div class="form-group">
+          <label for="login-password" class="form-label">Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="login-password" class="form-input form-input-password" autocomplete="current-password" required />
+            <button type="button" class="password-toggle-btn" data-toggle-for="login-password" aria-label="Show password">
+              <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" hidden><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            </button>
+          </div>
+        </div>
+        <span class="error-msg" id="login-error" style="display: none;">Incorrect password.</span>
+        <button type="submit" class="btn btn-primary btn-sm" id="btn-login-submit">
+          <span>Log In</span>
+        </button>
+        <p class="admin-text login-hint">First time here? The owner password was printed in the backend server's console the first time it ran.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== PORTFOLIO CUSTOMIZER & PROJECT MANAGER MODAL ==================== -->
+  <div class="modal-backdrop admin-backdrop" id="admin-modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card admin-card">
+      <div class="admin-modal-header">
+        <div class="admin-title-wrap">
+          <div class="admin-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <div>
+            <h3 class="admin-title">Portfolio &amp; Project Manager</h3>
+            <p class="admin-subtitle">Easily update your projects, profile info, and photos</p>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="btn-logout" title="Log out">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Log Out</span>
+        </button>
+        <button class="modal-close" id="admin-modal-close" aria-label="Close customizer">&times;</button>
+      </div>
+
+      <!-- Manager Tab Navigation -->
+      <div class="admin-tabs">
+        <button class="admin-tab-btn active" data-tab="tab-projects">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          <span>Projects</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-skills">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>Skills</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-education">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <span>Education</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-experience">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Experience</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-events">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Events</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-certificates">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+          <span>Certificates</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-messages">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Messages</span>
+          <span class="tab-count-badge" id="messages-tab-count" hidden>0</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-profile">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile &amp; Links</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-data">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Backup &amp; Export</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Project Management -->
+      <div class="admin-tab-content active" id="tab-projects">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="project-form-title">Add New Project</h4>
+          
+          <form id="manage-project-form" class="admin-form">
+            <input type="hidden" id="edit-project-id" value="" />
+
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="proj-title" class="form-label">Project Title <span class="required">*</span></label>
+                <input type="text" id="proj-title" class="form-input" placeholder="e.g. Student Management System" required />
+              </div>
+              <div class="form-group">
+                <label for="proj-category" class="form-label">Category <span class="required">*</span></label>
+                <select id="proj-category" class="form-input" required>
+                  <option value="web">Web</option>
+                  <option value="database">Database</option>
+                  <option value="programming">Programming</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="proj-desc" class="form-label">Description <span class="required">*</span></label>
+              <textarea id="proj-desc" rows="3" class="form-input form-textarea" placeholder="Brief explanation of what the project does and the problem it solves..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="proj-tech" class="form-label">Technologies (comma-separated) <span class="required">*</span></label>
+              <input type="text" id="proj-tech" class="form-input" placeholder="e.g. Python, SQL, HTML5, JavaScript" required />
+            </div>
+
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="proj-github" class="form-label">GitHub Repository URL</label>
+                <input type="url" id="proj-github" class="form-input" placeholder="https://github.com/your-username/repo" />
+              </div>
+              <div class="form-group">
+                <label for="proj-demo" class="form-label">Live Demo / Preview URL</label>
+                <input type="text" id="proj-demo" class="form-input" placeholder="https://yourdemo.com or #contact" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="proj-image-file" class="form-label">Project Photo</label>
+              <input type="file" id="proj-image-file" class="form-input" accept="image/*" />
+              <span class="file-hint">Optional. Upload a screenshot or banner image for this project (max 5MB).</span>
+              <img id="proj-image-preview" class="proj-image-preview" alt="Project photo preview" hidden />
+            </div>
+
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-project">
+                <span>Save Project</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-project-edit" style="display: none;">
+                <span>Cancel</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- Current Projects List -->
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Active Projects</h4>
+            <div class="admin-project-list" id="admin-project-list">
+              <!-- Dynamically rendered project items with Edit & Delete -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Skills Management -->
+      <div class="admin-tab-content" id="tab-skills">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="skill-form-title">Add New Skill</h4>
+          <form id="manage-skill-form" class="admin-form">
+            <input type="hidden" id="edit-skill-id" value="" />
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="skill-title" class="form-label">Skill Name <span class="required">*</span></label>
+                <input type="text" id="skill-title" class="form-input" placeholder="e.g. Python" required />
+              </div>
+              <div class="form-group">
+                <label for="skill-category" class="form-label">Category <span class="required">*</span></label>
+                <input type="text" id="skill-category" class="form-input" placeholder="e.g. Programming" required />
+              </div>
+            </div>
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="skill-badge" class="form-label">Badge (short label)</label>
+                <input type="text" id="skill-badge" class="form-input" placeholder="e.g. Core, RDBMS, Design" />
+              </div>
+              <div class="form-group">
+                <label for="skill-level" class="form-label">Proficiency % (blank = show as a tag)</label>
+                <input type="number" id="skill-level" class="form-input" placeholder="e.g. 75" min="0" max="100" />
+              </div>
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-skill">
+                <span>Save Skill</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-skill-edit" style="display: none;">
+                <span>Cancel</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Skills</h4>
+            <div class="admin-project-list" id="admin-skills-list">
+              <!-- Dynamically rendered skill items with Edit & Delete -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Education Management -->
+      <div class="admin-tab-content" id="tab-education">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="education-form-title">Add Education Entry</h4>
+          <form id="manage-education-form" class="admin-form">
+            <input type="hidden" id="edit-education-id" value="" />
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="edu-title" class="form-label">Institution <span class="required">*</span></label>
+                <input type="text" id="edu-title" class="form-input" placeholder="e.g. University of Jaffna" required />
+              </div>
+              <div class="form-group">
+                <label for="edu-period" class="form-label">Period</label>
+                <input type="text" id="edu-period" class="form-input" placeholder="e.g. 2022 - Present" />
+              </div>
+            </div>
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="edu-degree" class="form-label">Degree / Program</label>
+                <input type="text" id="edu-degree" class="form-input" placeholder="e.g. B.Sc. in Computing" />
+              </div>
+              <div class="form-group">
+                <label for="edu-status" class="form-label">Status</label>
+                <input type="text" id="edu-status" class="form-input" placeholder="e.g. Currently Enrolled / Completed" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="edu-desc" class="form-label">Description</label>
+              <textarea id="edu-desc" rows="3" class="form-input form-textarea" placeholder="What you studied / achieved..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="edu-tags" class="form-label">Tags (comma-separated)</label>
+              <input type="text" id="edu-tags" class="form-input" placeholder="e.g. Programming, Databases" />
+            </div>
+            <div class="form-group">
+              <label for="edu-image-file" class="form-label">Photo (optional)</label>
+              <input type="file" id="edu-image-file" class="form-input" accept="image/*" />
+              <span class="file-hint">Optional, e.g. an institution logo or campus photo (max 5MB).</span>
+              <img id="edu-image-preview" class="proj-image-preview" alt="Education photo preview" hidden />
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-education">
+                <span>Save Entry</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-education-edit" style="display: none;">
+                <span>Cancel</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Education Timeline</h4>
+            <div class="admin-project-list" id="admin-education-list">
+              <!-- Dynamically rendered education items with Edit & Delete -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Experience & Activities Management -->
+      <div class="admin-tab-content" id="tab-experience">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="experience-form-title">Add Experience / Activity</h4>
+          <form id="manage-experience-form" class="admin-form">
+            <input type="hidden" id="edit-experience-id" value="" />
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="exp-title" class="form-label">Title <span class="required">*</span></label>
+                <input type="text" id="exp-title" class="form-input" placeholder="e.g. IEEE Student Branch Activities" required />
+              </div>
+              <div class="form-group">
+                <label for="exp-badge" class="form-label">Badge</label>
+                <input type="text" id="exp-badge" class="form-input" placeholder="e.g. Active Participant" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="exp-desc" class="form-label">Description</label>
+              <textarea id="exp-desc" rows="3" class="form-input form-textarea" placeholder="What you did..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="exp-tags" class="form-label">Tags (comma-separated)</label>
+              <input type="text" id="exp-tags" class="form-input" placeholder="e.g. Networking, Workshops" />
+            </div>
+            <div class="form-group">
+              <label for="exp-image-file" class="form-label">Photo (optional)</label>
+              <input type="file" id="exp-image-file" class="form-input" accept="image/*" />
+              <span class="file-hint">Optional event/activity photo (max 5MB).</span>
+              <img id="exp-image-preview" class="proj-image-preview" alt="Experience photo preview" hidden />
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-experience">
+                <span>Save Entry</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-experience-edit" style="display: none;">
+                <span>Cancel</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Experience &amp; Activities</h4>
+            <div class="admin-project-list" id="admin-experience-list">
+              <!-- Dynamically rendered experience items with Edit & Delete -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Events Management -->
+      <div class="admin-tab-content" id="tab-events">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="event-form-title">Add New Event</h4>
+          <form id="manage-event-form" class="admin-form">
+            <input type="hidden" id="edit-event-id" value="" />
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="event-title" class="form-label">Event Title <span class="required">*</span></label>
+                <input type="text" id="event-title" class="form-input" placeholder="e.g. National Coding Competition 2026" required />
+              </div>
+              <div class="form-group">
+                <label for="event-type" class="form-label">Type</label>
+                <select id="event-type" class="form-input">
+                  <option value="competition">Competition</option>
+                  <option value="conference">Conference</option>
+                  <option value="tech-talk">Tech Talk</option>
+                  <option value="workshop">Workshop</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="event-desc" class="form-label">Description</label>
+              <textarea id="event-desc" rows="3" class="form-input form-textarea" placeholder="What the event was about, your role or result..."></textarea>
+            </div>
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="event-date" class="form-label">Date</label>
+                <input type="text" id="event-date" class="form-input" placeholder="e.g. March 2026" />
+              </div>
+              <div class="form-group">
+                <label for="event-location" class="form-label">Location</label>
+                <input type="text" id="event-location" class="form-input" placeholder="e.g. Colombo, Sri Lanka" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="event-link" class="form-label">Related Link (optional)</label>
+              <input type="url" id="event-link" class="form-input" placeholder="https://..." />
+            </div>
+            <div class="form-group">
+              <label for="event-image-file" class="form-label">Event Photo</label>
+              <input type="file" id="event-image-file" class="form-input" accept="image/*" />
+              <span class="file-hint">Optional. A photo from the event (max 5MB).</span>
+              <img id="event-image-preview" class="proj-image-preview" alt="Event photo preview" hidden />
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-event">
+                <span>Save Event</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-event-edit" style="display: none;">
+                <span>Cancel</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Events</h4>
+            <div class="admin-project-list" id="admin-events-list">
+              <!-- Dynamically rendered event items with Edit & Delete -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Certificates Management -->
+      <div class="admin-tab-content" id="tab-certificates">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="certificate-form-title">Add New Certificate</h4>
+          <form id="manage-certificate-form" class="admin-form">
+            <input type="hidden" id="edit-certificate-id" value="" />
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="cert-title-input" class="form-label">Certificate Name <span class="required">*</span></label>
+                <input type="text" id="cert-title-input" class="form-input" placeholder="e.g. Database Design & SQL" required />
+              </div>
+              <div class="form-group">
+                <label for="cert-org" class="form-label">Issuing Organization</label>
+                <input type="text" id="cert-org" class="form-input" placeholder="e.g. Coursera / IEEE / University" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="cert-date-input" class="form-label">Date</label>
+              <input type="text" id="cert-date-input" class="form-input" placeholder="e.g. 2024" />
+            </div>
+            <div class="form-group">
+              <label for="cert-desc-input" class="form-label">Description</label>
+              <textarea id="cert-desc-input" rows="3" class="form-input form-textarea" placeholder="What this certificate demonstrates..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="cert-image-file" class="form-label">Certificate Image</label>
+              <input type="file" id="cert-image-file" class="form-input" accept="image/*" />
+              <span class="file-hint">Optional. A scan or photo of the certificate (max 5MB).</span>
+              <img id="cert-image-preview" class="proj-image-preview" alt="Certificate preview" hidden />
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-certificate">
+                <span>Save Certificate</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-certificate-edit" style="display: none;">
+                <span>Cancel</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Certificates</h4>
+            <div class="admin-project-list" id="admin-certificates-list">
+              <!-- Dynamically rendered certificate items with Edit & Delete -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Contact Messages Inbox -->
+      <div class="admin-tab-content" id="tab-messages">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading">Messages from your Contact Form</h4>
+          <p class="admin-text">
+            Every submission is saved here automatically. If email notifications are configured (<code>backend/.env</code>), you'll also get a copy in your inbox.
+          </p>
+          <div class="admin-message-list" id="admin-messages-list">
+            <!-- Dynamically rendered messages with Delete -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Profile & Socials Management -->
+      <div class="admin-tab-content" id="tab-profile">
+        <form id="manage-profile-form" class="admin-form">
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label for="prof-name" class="form-label">Your Name</label>
+              <input type="text" id="prof-name" class="form-input" placeholder="Kasunika" />
+            </div>
+            <div class="form-group">
+              <label for="prof-degree" class="form-label">Degree / Program</label>
+              <input type="text" id="prof-degree" class="form-input" placeholder="e.g. B.Sc. in Computer Science" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="prof-image-file" class="form-label">Upload Profile Photo (Instant Preview)</label>
+            <input type="file" id="prof-image-file" class="form-input" accept="image/*" />
+            <span class="file-hint">Select an image from your computer to preview and update immediately.</span>
+          </div>
+
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label for="prof-email" class="form-label">Email Address</label>
+              <input type="email" id="prof-email" class="form-input" placeholder="your-email@example.com" />
+            </div>
+            <div class="form-group">
+              <label for="prof-phone" class="form-label">Phone Number</label>
+              <input type="tel" id="prof-phone" class="form-input" placeholder="e.g. +94 77 123 4567" />
+            </div>
+          </div>
+
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label for="prof-linkedin" class="form-label">LinkedIn Profile URL</label>
+              <input type="url" id="prof-linkedin" class="form-input" placeholder="https://linkedin.com/in/your-profile" />
+            </div>
+            <div class="form-group">
+              <label for="prof-github" class="form-label">GitHub Profile URL</label>
+              <input type="url" id="prof-github" class="form-input" placeholder="https://github.com/your-username" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="prof-location" class="form-label">Location</label>
+            <input type="text" id="prof-location" class="form-input" placeholder="e.g. University of Jaffna, Sri Lanka" />
+          </div>
+
+          <div class="form-group">
+            <label for="prof-bio" class="form-label">Short Bio (Hero Subtitle Paragraph)</label>
+            <textarea id="prof-bio" rows="3" class="form-input form-textarea" placeholder="Update your introduction..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="prof-about" class="form-label">About Me (full section — separate paragraphs with a blank line)</label>
+            <textarea id="prof-about" rows="6" class="form-input form-textarea" placeholder="Tell your longer story for the About section..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-sm">
+            <span>Update Profile Details</span>
+          </button>
+        </form>
+
+        <div class="admin-existing-section">
+          <h4 class="admin-form-heading">Change Password</h4>
+          <form id="change-password-form" class="admin-form">
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="current-password" class="form-label">Current Password</label>
+                <div class="input-wrapper">
+                  <input type="password" id="current-password" class="form-input form-input-password" autocomplete="current-password" required />
+                  <button type="button" class="password-toggle-btn" data-toggle-for="current-password" aria-label="Show password">
+                    <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" hidden><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="new-password" class="form-label">New Password (min. 6 characters)</label>
+                <div class="input-wrapper">
+                  <input type="password" id="new-password" class="form-input form-input-password" minlength="6" autocomplete="new-password" required />
+                  <button type="button" class="password-toggle-btn" data-toggle-for="new-password" aria-label="Show password">
+                    <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" hidden><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">
+              <span>Update Password</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tab 3: Backup & Export -->
+      <div class="admin-tab-content" id="tab-data">
+        <div class="admin-backup-card">
+          <h4 class="admin-form-heading">Manage Stored Data</h4>
+          <p class="admin-text">
+            All your updates are automatically saved to the backend server (<code>backend/data/</code>). You can export your data as JSON for backup, or restore the default project template — this removes any custom projects, profile edits, and uploaded photos.
+          </p>
+          <div class="admin-data-actions">
+            <button class="btn btn-outline btn-sm" id="btn-export-data">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Export Data (JSON)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-reset-data">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <span>Reset to Default</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FLOATING MANAGE / CUSTOMIZE BUTTON ==================== -->
+  <button class="admin-floating-btn" id="btn-admin-toggle" aria-label="Manage Projects and Profile Details" title="Customize Projects & Info">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    <span class="btn-manage-label">Manage Projects</span>
+  </button>
+
+  <!-- ==================== BACK TO TOP BUTTON ==================== -->
+  <button class="back-to-top" id="back-to-top" aria-label="Back to top of page">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+  </button>
+
+  <!-- Main JavaScript File -->
+  <script src="script.js"></script>
+</body>
+</html>
