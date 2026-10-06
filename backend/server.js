@@ -841,6 +841,7 @@ function registerResearchSubTable(fieldName, requiredField) {
 registerResearchSubTable('papers', 'title');
 registerResearchSubTable('milestones', 'task');
 registerResearchSubTable('resources', 'title');
+registerResearchSubTable('tasks', 'title');
 
 // ==================== RESET ENDPOINT ====================
 

@@ -1366,18 +1366,25 @@
           </div>
 
           <div class="research-detail-content" id="research-detail-content" hidden>
-            <h3 class="research-detail-title" id="research-detail-title">Research Project</h3>
+            <div class="research-detail-title-row">
+              <h3 class="research-detail-title" id="research-detail-title">Research Project</h3>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-export-research">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export Project</span>
+              </button>
+            </div>
 
             <div class="research-inner-tabs" id="research-inner-tabs">
               <button type="button" class="research-inner-tab-btn active" data-rtab="overview">Project Details</button>
               <button type="button" class="research-inner-tab-btn" data-rtab="timeline">Timeline</button>
               <button type="button" class="research-inner-tab-btn" data-rtab="papers">Literature</button>
               <button type="button" class="research-inner-tab-btn" data-rtab="schedule">Schedule</button>
+              <button type="button" class="research-inner-tab-btn" data-rtab="tasks">Tasks</button>
               <button type="button" class="research-inner-tab-btn" data-rtab="progress">Progress</button>
               <button type="button" class="research-inner-tab-btn" data-rtab="resources">Resources</button>
             </div>
 
-            <p class="research-unsaved-hint" id="research-unsaved-hint" hidden>Save the project details first to unlock Timeline, Literature, Schedule, Progress and Resources.</p>
+            <p class="research-unsaved-hint" id="research-unsaved-hint" hidden>Save the project details first to unlock Timeline, Literature, Schedule, Tasks, Progress and Resources.</p>
 
             <!-- Pane: Project Details -->
             <div class="research-pane" id="research-pane-overview" data-rpane="overview">
@@ -1498,6 +1505,20 @@
                   </thead>
                   <tbody id="milestones-table-body"></tbody>
                 </table>
+              </div>
+            </div>
+
+            <!-- Pane: Tasks / To-Do checklist -->
+            <div class="research-pane" id="research-pane-tasks" data-rpane="tasks" hidden>
+              <h4 class="admin-form-heading">To-Do / Tasks</h4>
+              <p class="admin-text">Quick action items for this project — check them off as you go.</p>
+              <form id="research-task-form" class="research-table-form">
+                <input type="text" id="task-title" class="form-input" placeholder="What needs to be done? *" required />
+                <input type="date" id="task-due" class="form-input" />
+                <button type="submit" class="btn btn-secondary btn-sm"><span>Add Task</span></button>
+              </form>
+              <div class="research-task-list" id="research-task-list">
+                <!-- Dynamically rendered tasks -->
               </div>
             </div>
 

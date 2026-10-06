@@ -2697,11 +2697,91 @@ a.contact-detail-val:hover {
   font-size: 0.85rem;
 }
 
+.research-detail-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .research-detail-title {
   font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 1rem;
+  margin: 0;
+}
+
+/* -------- Tasks / To-Do checklist -------- */
+.research-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.research-task-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.9rem;
+}
+
+.research-task-check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  cursor: pointer;
+}
+
+.research-task-check input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.research-task-text {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.research-task-item.done .research-task-text {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.research-task-due {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.research-task-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.2rem;
+}
+
+.research-task-delete:hover {
+  color: #ef4444;
+}
+
+.research-next-deadline {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  margin: 0.5rem 0 0.15rem;
 }
 
 /* -------- Inner tab nav (Overview / Timeline / Literature / Schedule / Progress / Resources) -------- */

@@ -932,6 +932,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnDeleteResearch = document.getElementById('btn-delete-research');
   const researchDiaryForm = document.getElementById('research-diary-form');
   const researchTimelineEl = document.getElementById('research-timeline');
+  const researchTaskForm = document.getElementById('research-task-form');
+  const researchTaskListEl = document.getElementById('research-task-list');
+  const btnExportResearch = document.getElementById('btn-export-research');
   const researchInnerTabBtns = document.querySelectorAll('.research-inner-tab-btn');
   const researchProgressGrid = document.getElementById('research-progress-grid');
 
@@ -1058,6 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
     papersTable.renderTable();
     milestonesTable.renderTable();
     resourcesTable.renderTable();
+    renderResearchTasks(item);
     renderResearchProgress();
   }
 
@@ -1090,6 +1094,114 @@ document.addEventListener('DOMContentLoaded', () => {
           alert(`Could not remove entry: ${err.message}`);
         }
       });
+    });
+  }
+
+  // Tasks are a checklist, not a table, so they get their own small
+  // renderer rather than going through setupResearchSubTable — but still
+  // use the same generic /tasks sub-resource routes on the backend.
+  function renderResearchTasks(item) {
+    if (!researchTaskListEl) return;
+    const tasks = Array.isArray(item.tasks)
+      ? [...item.tasks].sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1))
+      : [];
+    if (tasks.length === 0) {
+      researchTaskListEl.innerHTML = '<p class="admin-text">No tasks yet. Add your first one above.</p>';
+      return;
+    }
+    researchTaskListEl.innerHTML = tasks.map(t => `
+      <div class="research-task-item ${t.done ? 'done' : ''}">
+        <label class="research-task-check">
+          <input type="checkbox" class="research-task-checkbox" data-id="${t.id}" ${t.done ? 'checked' : ''} />
+          <span class="research-task-text">${escapeHtml(t.title)}</span>
+        </label>
+        ${t.dueDate ? `<span class="research-task-due">${escapeHtml(t.dueDate)}</span>` : ''}
+        <button type="button" class="research-task-delete" data-id="${t.id}" aria-label="Delete task">✕</button>
+      </div>
+    `).join('');
+
+    researchTaskListEl.querySelectorAll('.research-task-checkbox').forEach(cb => {
+      cb.addEventListener('change', async () => {
+        if (!selectedResearchId) return;
+        try {
+          const res = await authFetch(`${API_BASE}/api/research/${selectedResearchId}/tasks/${cb.getAttribute('data-id')}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ done: cb.checked })
+          });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.message || 'Update failed');
+          await fetchResearch();
+          renderResearchTasks(cachedResearch.find(r => r.id === selectedResearchId) || {});
+          renderResearchProgress();
+        } catch (err) {
+          alert(`Could not update task: ${err.message}`);
+        }
+      });
+    });
+
+    researchTaskListEl.querySelectorAll('.research-task-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!selectedResearchId || !confirm('Delete this task?')) return;
+        try {
+          const res = await authFetch(`${API_BASE}/api/research/${selectedResearchId}/tasks/${btn.getAttribute('data-id')}`, { method: 'DELETE' });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.message || 'Delete failed');
+          await fetchResearch();
+          renderResearchTasks(cachedResearch.find(r => r.id === selectedResearchId) || {});
+          renderResearchProgress();
+        } catch (err) {
+          alert(`Could not delete: ${err.message}`);
+        }
+      });
+    });
+  }
+
+  if (researchTaskForm) {
+    researchTaskForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!selectedResearchId) return;
+
+      const titleInput = document.getElementById('task-title');
+      const dueInput = document.getElementById('task-due');
+      if (!titleInput || !titleInput.value.trim()) return;
+
+      try {
+        const res = await authFetch(`${API_BASE}/api/research/${selectedResearchId}/tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: titleInput.value.trim(), dueDate: dueInput ? dueInput.value : '' })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || 'Could not add task');
+
+        await fetchResearch();
+        renderResearchTasks(cachedResearch.find(r => r.id === selectedResearchId) || {});
+        renderResearchProgress();
+        titleInput.value = '';
+        if (dueInput) dueInput.value = '';
+      } catch (err) {
+        alert(`Could not add task: ${err.message}`);
+      }
+    });
+  }
+
+  if (btnExportResearch) {
+    btnExportResearch.addEventListener('click', () => {
+      if (!selectedResearchId) return;
+      const project = cachedResearch.find(r => r.id === selectedResearchId);
+      if (!project) return;
+      const exportData = { ...project };
+      delete exportData._id;
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(project.title || 'research-project').replace(/[^a-z0-9]+/gi, '_').toLowerCase()}-export.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
   }
 
@@ -1288,6 +1400,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const papers = Array.isArray(project.papers) ? project.papers : [];
     const milestones = Array.isArray(project.milestones) ? project.milestones : [];
     const logs = Array.isArray(project.logs) ? project.logs : [];
+    const tasks = Array.isArray(project.tasks) ? project.tasks : [];
 
     function countByStatus(list) {
       const counts = { 'Not Started': 0, 'In Progress': 0, Completed: 0 };
@@ -1310,6 +1423,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 0) / totalPapers)
       : 0;
     const milestonePct = totalMilestones > 0 ? Math.round((milestoneCounts.Completed / totalMilestones) * 100) : 0;
+
+    const totalTasks = tasks.length;
+    const doneTasks = tasks.filter(t => t.done).length;
+    const taskPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+    const nextDeadline = milestones
+      .filter(m => m.status !== 'Completed' && m.endDate)
+      .sort((a, b) => a.endDate.localeCompare(b.endDate))[0];
 
     function donut(pct, color) {
       return `<div class="research-donut" style="--pct:${pct}; --donut-color:${color};"><span class="research-donut-value">${pct}%</span></div>`;
@@ -1341,6 +1462,17 @@ document.addEventListener('DOMContentLoaded', () => {
         <h5>Milestones Completed</h5>
         ${donut(milestonePct, 'var(--accent-secondary)')}
         <p class="admin-text">${milestoneCounts.Completed} of ${totalMilestones} phases done</p>
+      </div>
+      <div class="research-chart-card">
+        <h5>Tasks Completed</h5>
+        ${donut(taskPct, 'var(--success)')}
+        <p class="admin-text">${doneTasks} of ${totalTasks} tasks done</p>
+      </div>
+      <div class="research-chart-card">
+        <h5>Next Deadline</h5>
+        ${nextDeadline
+          ? `<p class="research-next-deadline">${escapeHtml(nextDeadline.task)}</p><p class="admin-text">${escapeHtml(nextDeadline.endDate)}</p>`
+          : '<p class="admin-text">No upcoming deadlines set.</p>'}
       </div>
       <div class="research-chart-card research-chart-wide">
         <h5>Literature Review Breakdown</h5>
@@ -1383,6 +1515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         researchImagePreview.removeAttribute('src');
       }
       if (researchTimelineEl) researchTimelineEl.innerHTML = '';
+      if (researchTaskListEl) researchTaskListEl.innerHTML = '';
       papersTable.renderTable();
       milestonesTable.renderTable();
       resourcesTable.renderTable();
