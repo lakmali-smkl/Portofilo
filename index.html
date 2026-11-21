@@ -56,6 +56,20 @@
           <li class="nav-item"><a href="#experience" class="nav-link">Experience</a></li>
           <li class="nav-item"><a href="#events" class="nav-link">Events</a></li>
           <li class="nav-item"><a href="#certificates" class="nav-link">Certificates</a></li>
+          <!-- "More" holds the optional sections; each link (and the whole
+               menu) is hidden by script.js until that section has content. -->
+          <li class="nav-item nav-dropdown" id="nav-more" hidden>
+            <button type="button" class="nav-dropdown-toggle" id="nav-more-toggle" aria-expanded="false" aria-controls="nav-more-menu">
+              <span>More</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul class="nav-dropdown-menu" id="nav-more-menu">
+              <li class="nav-item" data-section-link="achievements" hidden><a href="#achievements" class="nav-link nav-sublink">Achievements</a></li>
+              <li class="nav-item" data-section-link="publications" hidden><a href="#publications" class="nav-link nav-sublink">Publications</a></li>
+              <li class="nav-item" data-section-link="gallery" hidden><a href="#gallery" class="nav-link nav-sublink">Gallery</a></li>
+              <li class="nav-item" data-section-link="testimonials" hidden><a href="#testimonials" class="nav-link nav-sublink">Testimonials</a></li>
+            </ul>
+          </li>
           <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
         </ul>
       </nav>
@@ -485,6 +499,22 @@
       </div>
     </section>
 
+    <!-- ==================== ACHIEVEMENTS & AWARDS SECTION ==================== -->
+    <!-- Hidden until at least one achievement is added (script.js). -->
+    <section class="achievements section" id="achievements" hidden>
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Recognition</span>
+          <h2 class="section-title">Achievements &amp; <span class="gradient-text">Awards</span></h2>
+          <p class="section-subtitle">Awards, scholarships, competition results, and academic honours</p>
+        </div>
+
+        <div class="projects-grid" id="achievements-grid">
+          <!-- Dynamically rendered by script.js -->
+        </div>
+      </div>
+    </section>
+
     <!-- ==================== CERTIFICATES & ACHIEVEMENTS SECTION ==================== -->
     <section class="certificates section" id="certificates">
       <div class="container">
@@ -495,6 +525,51 @@
         </div>
 
         <div class="certificates-grid" id="certificates-grid">
+          <!-- Dynamically rendered by script.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PUBLICATIONS / BLOG SECTION ==================== -->
+    <section class="publications section" id="publications" hidden>
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Writing</span>
+          <h2 class="section-title">Publications &amp; <span class="gradient-text">Blog</span></h2>
+          <p class="section-subtitle">Papers, articles, and posts I've written</p>
+        </div>
+
+        <div class="publications-list" id="publications-list">
+          <!-- Dynamically rendered by script.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PHOTO GALLERY SECTION ==================== -->
+    <section class="gallery section" id="gallery" hidden>
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Moments</span>
+          <h2 class="section-title">Photo <span class="gradient-text">Gallery</span></h2>
+          <p class="section-subtitle">Albums from events, projects, and campus life — click an album to browse</p>
+        </div>
+
+        <div class="gallery-grid" id="gallery-grid">
+          <!-- Dynamically rendered by script.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TESTIMONIALS SECTION ==================== -->
+    <section class="testimonials section" id="testimonials" hidden>
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Kind Words</span>
+          <h2 class="section-title">What People <span class="gradient-text">Say</span></h2>
+          <p class="section-subtitle">Recommendations from lecturers, mentors, and teammates</p>
+        </div>
+
+        <div class="testimonials-grid" id="testimonials-grid">
           <!-- Dynamically rendered by script.js -->
         </div>
       </div>
@@ -702,6 +777,10 @@
           <li><a href="#projects">Projects</a></li>
           <li><a href="#experience">Experience</a></li>
           <li><a href="#certificates">Certificates</a></li>
+          <li data-section-link="achievements" hidden><a href="#achievements">Achievements</a></li>
+          <li data-section-link="publications" hidden><a href="#publications">Publications</a></li>
+          <li data-section-link="gallery" hidden><a href="#gallery">Gallery</a></li>
+          <li data-section-link="testimonials" hidden><a href="#testimonials">Testimonials</a></li>
           <li><a href="#contact">Contact</a></li>
         </ul>
       </div>
@@ -748,6 +827,25 @@
         <button class="btn btn-secondary btn-sm" id="modal-ok-btn">Close Preview</button>
       </div>
     </div>
+  </div>
+
+  <!-- ==================== PHOTO LIGHTBOX (slideshow for any item's photos) ==================== -->
+  <div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Close photo viewer">&times;</button>
+    <button type="button" class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="Previous photo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <figure class="lightbox-figure">
+      <img id="lightbox-img" alt="" />
+      <figcaption class="lightbox-caption">
+        <span id="lightbox-caption-text"></span>
+        <span class="lightbox-counter" id="lightbox-counter"></span>
+      </figcaption>
+    </figure>
+    <button type="button" class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="Next photo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="lightbox-thumbs" id="lightbox-thumbs"></div>
   </div>
 
   <!-- ==================== OWNER LOGIN MODAL ==================== -->
@@ -832,6 +930,22 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
           <span>Certificates</span>
         </button>
+        <button class="admin-tab-btn" data-tab="tab-achievements">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          <span>Achievements</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-publications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <span>Publications</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-gallery">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg>
+          <span>Gallery</span>
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-testimonials">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.76-2.02-2-2H4c-1.25 0-2 .75-2 1.97V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .01-1 1.03V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.76-2.02-2-2h-4c-1.25 0-2 .75-2 1.97V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+          <span>Testimonials</span>
+        </button>
         <button class="admin-tab-btn" data-tab="tab-research">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           <span>Research (Private)</span>
@@ -896,10 +1010,10 @@
             </div>
 
             <div class="form-group">
-              <label for="proj-image-file" class="form-label">Project Photo</label>
-              <input type="file" id="proj-image-file" class="form-input" accept="image/*" />
-              <span class="file-hint">Optional. Upload a screenshot or banner image for this project (max 5MB).</span>
-              <img id="proj-image-preview" class="proj-image-preview" alt="Project photo preview" hidden />
+              <label for="proj-image-file" class="form-label">Project Photos</label>
+              <input type="file" id="proj-image-file" class="form-input" accept="image/*" multiple />
+              <span class="file-hint">Screenshots, banners or diagrams. Add as many as you like — pick several at once or add more later (max 5MB each). The first photo is the cover.</span>
+              <div class="photo-manager" id="proj-photo-manager"></div>
             </div>
 
             <div class="admin-form-actions">
@@ -1002,10 +1116,10 @@
               <input type="text" id="edu-tags" class="form-input" placeholder="e.g. Programming, Databases" />
             </div>
             <div class="form-group">
-              <label for="edu-image-file" class="form-label">Photo (optional)</label>
-              <input type="file" id="edu-image-file" class="form-input" accept="image/*" />
-              <span class="file-hint">Optional, e.g. an institution logo or campus photo (max 5MB).</span>
-              <img id="edu-image-preview" class="proj-image-preview" alt="Education photo preview" hidden />
+              <label for="edu-image-file" class="form-label">Photos (optional)</label>
+              <input type="file" id="edu-image-file" class="form-input" accept="image/*" multiple />
+              <span class="file-hint">e.g. institution logo, campus or graduation photos. Add as many as you like — pick several at once or add more later (max 5MB each). The first photo is the cover.</span>
+              <div class="photo-manager" id="edu-photo-manager"></div>
             </div>
             <div class="admin-form-actions">
               <button type="submit" class="btn btn-primary btn-sm" id="btn-save-education">
@@ -1051,10 +1165,10 @@
               <input type="text" id="exp-tags" class="form-input" placeholder="e.g. Networking, Workshops" />
             </div>
             <div class="form-group">
-              <label for="exp-image-file" class="form-label">Photo (optional)</label>
-              <input type="file" id="exp-image-file" class="form-input" accept="image/*" />
-              <span class="file-hint">Optional event/activity photo (max 5MB).</span>
-              <img id="exp-image-preview" class="proj-image-preview" alt="Experience photo preview" hidden />
+              <label for="exp-image-file" class="form-label">Photos (optional)</label>
+              <input type="file" id="exp-image-file" class="form-input" accept="image/*" multiple />
+              <span class="file-hint">Photos from the activity. Add as many as you like — pick several at once or add more later (max 5MB each). The first photo is the cover.</span>
+              <div class="photo-manager" id="exp-photo-manager"></div>
             </div>
             <div class="admin-form-actions">
               <button type="submit" class="btn btn-primary btn-sm" id="btn-save-experience">
@@ -1116,10 +1230,10 @@
               <input type="url" id="event-link" class="form-input" placeholder="https://..." />
             </div>
             <div class="form-group">
-              <label for="event-image-file" class="form-label">Event Photo</label>
-              <input type="file" id="event-image-file" class="form-input" accept="image/*" />
-              <span class="file-hint">Optional. A photo from the event (max 5MB).</span>
-              <img id="event-image-preview" class="proj-image-preview" alt="Event photo preview" hidden />
+              <label for="event-image-file" class="form-label">Event Photos</label>
+              <input type="file" id="event-image-file" class="form-input" accept="image/*" multiple />
+              <span class="file-hint">Photos from the event. Add as many as you like — pick several at once or add more later (max 5MB each). The first photo is the cover.</span>
+              <div class="photo-manager" id="event-photo-manager"></div>
             </div>
             <div class="admin-form-actions">
               <button type="submit" class="btn btn-primary btn-sm" id="btn-save-event">
@@ -1165,10 +1279,10 @@
               <textarea id="cert-desc-input" rows="3" class="form-input form-textarea" placeholder="What this certificate demonstrates..."></textarea>
             </div>
             <div class="form-group">
-              <label for="cert-image-file" class="form-label">Certificate Image</label>
-              <input type="file" id="cert-image-file" class="form-input" accept="image/*" />
-              <span class="file-hint">Optional. A scan or photo of the certificate (max 5MB).</span>
-              <img id="cert-image-preview" class="proj-image-preview" alt="Certificate preview" hidden />
+              <label for="cert-image-file" class="form-label">Certificate Photos</label>
+              <input type="file" id="cert-image-file" class="form-input" accept="image/*" multiple />
+              <span class="file-hint">Scans or photos of the certificate (front, back, award ceremony...). Add as many as you like — pick several at once or add more later (max 5MB each). The first photo is the cover.</span>
+              <div class="photo-manager" id="cert-photo-manager"></div>
             </div>
             <div class="admin-form-actions">
               <button type="submit" class="btn btn-primary btn-sm" id="btn-save-certificate">
@@ -1185,6 +1299,214 @@
             <div class="admin-project-list" id="admin-certificates-list">
               <!-- Dynamically rendered certificate items with Edit & Delete -->
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Achievements & Awards -->
+      <div class="admin-tab-content" id="tab-achievements">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="achievement-form-title">Add Achievement / Award</h4>
+          <form id="manage-achievement-form" class="admin-form">
+            <input type="hidden" id="edit-achievement-id" value="" />
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="ach-title" class="form-label">Achievement / Award <span class="required">*</span></label>
+                <input type="text" id="ach-title" class="form-input" placeholder="e.g. 1st Place — Inter-University Hackathon" required />
+              </div>
+              <div class="form-group">
+                <label for="ach-category" class="form-label">Type</label>
+                <select id="ach-category" class="form-input">
+                  <option value="award">Award</option>
+                  <option value="competition">Competition Result</option>
+                  <option value="scholarship">Scholarship</option>
+                  <option value="academic">Academic Honour</option>
+                  <option value="recognition">Recognition</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="ach-issuer" class="form-label">Awarded By</label>
+                <input type="text" id="ach-issuer" class="form-input" placeholder="e.g. IEEE Sri Lanka Section" />
+              </div>
+              <div class="form-group">
+                <label for="ach-date" class="form-label">Date</label>
+                <input type="text" id="ach-date" class="form-input" placeholder="e.g. August 2025" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="ach-desc" class="form-label">Description</label>
+              <textarea id="ach-desc" rows="3" class="form-input form-textarea" placeholder="What you achieved and why it matters..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="ach-link" class="form-label">Related Link (optional)</label>
+              <input type="url" id="ach-link" class="form-input" placeholder="https://..." />
+            </div>
+            <div class="form-group">
+              <label for="ach-image-file" class="form-label">Photos</label>
+              <input type="file" id="ach-image-file" class="form-input" accept="image/*" multiple />
+              <span class="file-hint">Award ceremony, trophy or certificate photos. Add as many as you like — pick several at once or add more later (max 5MB each). The first photo is the cover.</span>
+              <div class="photo-manager" id="ach-photo-manager"></div>
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-achievement"><span>Save Achievement</span></button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-achievement-edit" style="display: none;"><span>Cancel</span></button>
+            </div>
+          </form>
+
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Achievements</h4>
+            <div class="admin-project-list" id="admin-achievements-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Publications / Blog -->
+      <div class="admin-tab-content" id="tab-publications">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="publication-form-title">Add Publication / Post</h4>
+          <form id="manage-publication-form" class="admin-form">
+            <input type="hidden" id="edit-publication-id" value="" />
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="pub-title" class="form-label">Title <span class="required">*</span></label>
+                <input type="text" id="pub-title" class="form-input" placeholder="e.g. Normalisation in Practice" required />
+              </div>
+              <div class="form-group">
+                <label for="pub-type" class="form-label">Type</label>
+                <select id="pub-type" class="form-input">
+                  <option value="article">Article</option>
+                  <option value="blog">Blog Post</option>
+                  <option value="paper">Research Paper</option>
+                  <option value="thesis">Thesis / Report</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="pub-publisher" class="form-label">Published In / Platform</label>
+                <input type="text" id="pub-publisher" class="form-input" placeholder="e.g. Medium, Dev.to, a journal or conference" />
+              </div>
+              <div class="form-group">
+                <label for="pub-date" class="form-label">Date</label>
+                <input type="text" id="pub-date" class="form-input" placeholder="e.g. 2025" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="pub-desc" class="form-label">Summary</label>
+              <textarea id="pub-desc" rows="3" class="form-input form-textarea" placeholder="A short summary of what it's about..."></textarea>
+            </div>
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="pub-link" class="form-label">Link to Read</label>
+                <input type="url" id="pub-link" class="form-input" placeholder="https://..." />
+              </div>
+              <div class="form-group">
+                <label for="pub-tags" class="form-label">Tags (comma separated)</label>
+                <input type="text" id="pub-tags" class="form-input" placeholder="e.g. Databases, SQL" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="pub-image-file" class="form-label">Photos</label>
+              <input type="file" id="pub-image-file" class="form-input" accept="image/*" multiple />
+              <span class="file-hint">Cover image, figures or screenshots. Add as many as you like — pick several at once or add more later (max 5MB each). The first photo is the cover.</span>
+              <div class="photo-manager" id="pub-photo-manager"></div>
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-publication"><span>Save Publication</span></button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-publication-edit" style="display: none;"><span>Cancel</span></button>
+            </div>
+          </form>
+
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Publications</h4>
+            <div class="admin-project-list" id="admin-publications-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Photo Gallery -->
+      <div class="admin-tab-content" id="tab-gallery">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="gallery-form-title">Add Gallery Album</h4>
+          <form id="manage-gallery-form" class="admin-form">
+            <input type="hidden" id="edit-gallery-id" value="" />
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="gal-title" class="form-label">Album Title <span class="required">*</span></label>
+                <input type="text" id="gal-title" class="form-input" placeholder="e.g. IEEE Day 2025" required />
+              </div>
+              <div class="form-group">
+                <label for="gal-date" class="form-label">Date</label>
+                <input type="date" id="gal-date" class="form-input" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="gal-desc" class="form-label">Description</label>
+              <textarea id="gal-desc" rows="2" class="form-input form-textarea" placeholder="A line about these photos..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="gal-image-file" class="form-label">Photos <span class="required">*</span></label>
+              <input type="file" id="gal-image-file" class="form-input" accept="image/*" multiple />
+              <span class="file-hint">Select as many photos as you like at once, or keep adding more (max 5MB each). The first photo is the album cover. Albums without photos are not shown publicly.</span>
+              <div class="photo-manager" id="gal-photo-manager"></div>
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-gallery"><span>Save Album</span></button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-gallery-edit" style="display: none;"><span>Cancel</span></button>
+            </div>
+          </form>
+
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Albums</h4>
+            <div class="admin-project-list" id="admin-gallery-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Testimonials -->
+      <div class="admin-tab-content" id="tab-testimonials">
+        <div class="admin-form-container">
+          <h4 class="admin-form-heading" id="testimonial-form-title">Add Testimonial</h4>
+          <p class="admin-text">Only add real quotes, with the person's permission.</p>
+          <form id="manage-testimonial-form" class="admin-form">
+            <input type="hidden" id="edit-testimonial-id" value="" />
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label for="testi-name" class="form-label">Person's Name <span class="required">*</span></label>
+                <input type="text" id="testi-name" class="form-input" placeholder="e.g. Dr. A. Perera" required />
+              </div>
+              <div class="form-group">
+                <label for="testi-role" class="form-label">Role / Relationship</label>
+                <input type="text" id="testi-role" class="form-input" placeholder="e.g. Senior Lecturer, University of Jaffna" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="testi-quote" class="form-label">Quote <span class="required">*</span></label>
+              <textarea id="testi-quote" rows="4" class="form-input form-textarea" placeholder="What they said about working with you..." required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="testi-link" class="form-label">Profile Link (optional)</label>
+              <input type="url" id="testi-link" class="form-input" placeholder="e.g. their LinkedIn URL" />
+            </div>
+            <div class="form-group">
+              <label for="testi-image-file" class="form-label">Photos</label>
+              <input type="file" id="testi-image-file" class="form-input" accept="image/*" multiple />
+              <span class="file-hint">The first photo is shown as their picture; any more open in the photo viewer (max 5MB each).</span>
+              <div class="photo-manager" id="testi-photo-manager"></div>
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-testimonial"><span>Save Testimonial</span></button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-testimonial-edit" style="display: none;"><span>Cancel</span></button>
+            </div>
+          </form>
+
+          <div class="admin-existing-section">
+            <h4 class="admin-form-heading">Your Testimonials</h4>
+            <div class="admin-project-list" id="admin-testimonials-list"></div>
           </div>
         </div>
       </div>
@@ -1419,10 +1741,10 @@
                   <input type="text" id="research-tags" class="form-input" placeholder="e.g. Python, Dataset, Supervisor Name" />
                 </div>
                 <div class="form-group">
-                  <label for="research-image-file" class="form-label">Cover Image / Screenshot</label>
-                  <input type="file" id="research-image-file" class="form-input" accept="image/*" />
-                  <span class="file-hint">Optional (max 5MB). Also kept private.</span>
-                  <img id="research-image-preview" class="proj-image-preview" alt="Research cover preview" hidden />
+                  <label for="research-image-file" class="form-label">Photos / Screenshots</label>
+                  <input type="file" id="research-image-file" class="form-input" accept="image/*" multiple />
+                  <span class="file-hint">Also kept private. Add as many as you like — pick several at once or add more later (max 5MB each). The first photo is the cover.</span>
+                  <div class="photo-manager" id="research-photo-manager"></div>
                 </div>
                 <div class="admin-form-actions">
                   <button type="submit" class="btn btn-primary btn-sm" id="btn-save-research">

@@ -28,7 +28,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 
 const { connectDB } = require('./db');
 const { resourceModel, Image, Profile, Auth } = require('./models');
@@ -65,19 +65,101 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB max per file
 });
 
-async function saveImageFile(file) {
+// `isPrivate` marks images that belong to owner-only content (research
+// projects) so GET /api/images/:id only serves them to the logged-in owner.
+async function saveImageFile(file, { isPrivate = false } = {}) {
   if (!file) return null;
   const id = uuidv4();
-  await Image.create({ id, data: file.buffer, contentType: file.mimetype });
+  await Image.create({ id, data: file.buffer, contentType: file.mimetype, private: isPrivate });
   return `/api/images/${id}`;
 }
 
-async function deleteImageByPath(imagePath) {
-  if (imagePath && imagePath.startsWith('/api/images/')) {
-    const id = imagePath.replace('/api/images/', '');
-    await Image.deleteOne({ id }).catch(() => {});
-  }
+function imageIdFromPath(imagePath) {
+  return imagePath && imagePath.startsWith('/api/images/') ? imagePath.replace('/api/images/', '') : null;
 }
+
+// Escape user input before putting it into an HTML email.
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Express 4 does not catch errors thrown by async handlers — without this
+// a database error would leave the request hanging forever.
+const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
+async function deleteImageByPath(imagePath) {
+  const id = imageIdFromPath(imagePath);
+  if (id) await Image.deleteOne({ id }).catch(() => {});
+}
+
+// ==================== MULTI-PHOTO SUPPORT ====================
+// Every section item (except the profile, which keeps one photo) holds any
+// number of photos in `images` (ordered; the first is the cover). `image`
+// is kept in sync with images[0] so older code and data keep working.
+const MAX_PHOTOS_PER_UPLOAD = 30;
+const uploadPhotos = upload.fields([
+  { name: 'image', maxCount: 1 },               // legacy single-photo field
+  { name: 'images', maxCount: MAX_PHOTOS_PER_UPLOAD }
+]);
+
+// Photos of an item, coping with items saved before `images` existed.
+function itemImages(item) {
+  if (!item) return [];
+  if (Array.isArray(item.images)) return item.images.filter(Boolean);
+  return item.image ? [item.image] : [];
+}
+
+function uploadedFiles(req) {
+  if (!req.files) return [];
+  if (Array.isArray(req.files)) return req.files;
+  return [...(req.files.image || []), ...(req.files.images || [])];
+}
+
+// Works out an item's new photo list from an add/edit request.
+//   keepImages (optional, JSON array): which existing photos to keep, in
+//     the new order. Omitted = keep them all as they are. Paths that are not
+//     already on this item are ignored, so a request can't "adopt" another
+//     item's photo.
+//   uploaded files: appended after the kept photos.
+// Returns the new list plus the photos that were dropped (to delete only
+// after the item is saved).
+async function resolveImages(req, existingItem, { isPrivate = false } = {}) {
+  const current = itemImages(existingItem);
+  let kept = current;
+
+  if (req.body.keepImages !== undefined) {
+    let requested;
+    try {
+      requested = JSON.parse(req.body.keepImages);
+    } catch {
+      requested = String(req.body.keepImages).split(',').map(s => s.trim());
+    }
+    if (!Array.isArray(requested)) requested = [];
+    kept = [...new Set(requested.filter(p => current.includes(p)))];
+  }
+
+  const added = [];
+  for (const file of uploadedFiles(req)) {
+    added.push(await saveImageFile(file, { isPrivate }));
+  }
+
+  const images = [...kept, ...added];
+  const removed = current.filter(p => !kept.includes(p));
+  return { images, removed };
+}
+
+async function deleteImages(paths) {
+  for (const p of paths) await deleteImageByPath(p);
+}
+
+// Fields that describe photos are managed by resolveImages(), never copied
+// from the request body as plain text.
+const PHOTO_BODY_KEYS = ['image', 'images', 'keepImages'];
 
 // Serve images stored in MongoDB
 app.get('/api/images/:id', async (req, res) => {
@@ -86,8 +168,14 @@ app.get('/api/images/:id', async (req, res) => {
     // Binary into a real Node Buffer on a hydrated Mongoose document.
     const image = await Image.findOne({ id: req.params.id });
     if (!image) return res.status(404).send('Not found');
+    if (image.private && !isOwnerRequest(req)) {
+      // Same response as a missing image, so private ids can't be probed.
+      return res.status(404).send('Not found');
+    }
     res.set('Content-Type', image.contentType || 'application/octet-stream');
-    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.set('Cache-Control', image.private
+      ? 'private, no-store'
+      : 'public, max-age=31536000, immutable');
     res.send(image.data);
   } catch (err) {
     res.status(500).send('Error loading image');
@@ -125,9 +213,24 @@ async function bootstrapAuth() {
 
 let AUTH;
 
-function requireAuth(req, res, next) {
+function bearerToken(req) {
   const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  return header.startsWith('Bearer ') ? header.slice(7) : null;
+}
+
+function isOwnerRequest(req) {
+  const token = bearerToken(req);
+  if (!token) return false;
+  try {
+    jwt.verify(token, AUTH.jwtSecret);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function requireAuth(req, res, next) {
+  const token = bearerToken(req);
   if (!token) {
     return res.status(401).json({ success: false, message: 'Login required.' });
   }
@@ -350,6 +453,36 @@ const RESOURCES = {
     numberFields: [],
     seed: () => [] // no fabricated defaults — the owner adds their own
   },
+  // The four sections below start empty — the public site hides each one
+  // until the owner adds something, so no placeholder content is invented.
+  achievements: {
+    label: 'Achievement',
+    hasImage: true,
+    arrayFields: [],
+    numberFields: [],
+    seed: () => []
+  },
+  publications: {
+    label: 'Publication',
+    hasImage: true,
+    arrayFields: ['tags'],
+    numberFields: [],
+    seed: () => []
+  },
+  testimonials: {
+    label: 'Testimonial',
+    hasImage: true,
+    arrayFields: [],
+    numberFields: [],
+    seed: () => []
+  },
+  gallery: {
+    label: 'Gallery album',
+    hasImage: true,
+    arrayFields: [],
+    numberFields: [],
+    seed: () => []
+  },
   research: {
     label: 'Research Project',
     hasImage: true,
@@ -388,20 +521,20 @@ app.get('/api/health', (req, res) => {
 const Project = resourceModel('projects');
 
 // GET all projects
-app.get('/api/projects', async (req, res) => {
+app.get('/api/projects', asyncHandler(async (req, res) => {
   const projects = await Project.find({}).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: projects });
-});
+}));
 
 // GET single project by ID
-app.get('/api/projects/:id', async (req, res) => {
+app.get('/api/projects/:id', asyncHandler(async (req, res) => {
   const project = await Project.findOne({ id: req.params.id }).lean();
   if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
   res.json({ success: true, data: project });
-});
+}));
 
-// POST - Add new project (supports image upload)
-app.post('/api/projects', requireAuth, upload.single('image'), async (req, res) => {
+// POST - Add new project (supports any number of photos)
+app.post('/api/projects', requireAuth, uploadPhotos, async (req, res) => {
   try {
     const { title, category, description, tech, github, demo } = req.body;
 
@@ -417,6 +550,7 @@ app.post('/api/projects', requireAuth, upload.single('image'), async (req, res) 
       techArray = tech.split(',').map(t => t.trim()).filter(Boolean);
     }
 
+    const { images } = await resolveImages(req, null);
     const newProject = {
       id: uuidv4(),
       title: title.trim(),
@@ -425,7 +559,8 @@ app.post('/api/projects', requireAuth, upload.single('image'), async (req, res) 
       tech: techArray,
       github: github ? github.trim() : 'https://github.com/[Your-GitHub]',
       demo: demo ? demo.trim() : '#contact',
-      image: await saveImageFile(req.file),
+      images,
+      image: images[0] || null,
       createdAt: new Date().toISOString()
     };
 
@@ -436,8 +571,8 @@ app.post('/api/projects', requireAuth, upload.single('image'), async (req, res) 
   }
 });
 
-// PUT - Edit existing project (supports image replacement)
-app.put('/api/projects/:id', requireAuth, upload.single('image'), async (req, res) => {
+// PUT - Edit existing project (add / remove / reorder photos)
+app.put('/api/projects/:id', requireAuth, uploadPhotos, async (req, res) => {
   try {
     const project = await Project.findOne({ id: req.params.id }).lean();
     if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
@@ -453,12 +588,7 @@ app.put('/api/projects/:id', requireAuth, upload.single('image'), async (req, re
       }
     }
 
-    // If a new image was uploaded, delete the old one
-    let image = project.image;
-    if (req.file) {
-      if (project.image) await deleteImageByPath(project.image);
-      image = await saveImageFile(req.file);
-    }
+    const { images, removed } = await resolveImages(req, project);
 
     const updated = {
       title: title ? title.trim() : project.title,
@@ -467,11 +597,13 @@ app.put('/api/projects/:id', requireAuth, upload.single('image'), async (req, re
       tech: techArray,
       github: github ? github.trim() : project.github,
       demo: demo ? demo.trim() : project.demo,
-      image,
+      images,
+      image: images[0] || null,
       updatedAt: new Date().toISOString()
     };
 
     await Project.updateOne({ id: req.params.id }, updated);
+    await deleteImages(removed);
     res.json({ success: true, data: { ...project, ...updated }, message: 'Project updated successfully!' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -483,7 +615,7 @@ app.delete('/api/projects/:id', requireAuth, async (req, res) => {
   try {
     const deleted = await Project.findOneAndDelete({ id: req.params.id }).lean();
     if (!deleted) return res.status(404).json({ success: false, message: 'Project not found' });
-    if (deleted.image) await deleteImageByPath(deleted.image);
+    await deleteImages(itemImages(deleted));
     res.json({ success: true, data: deleted, message: 'Project deleted successfully!' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -493,10 +625,10 @@ app.delete('/api/projects/:id', requireAuth, async (req, res) => {
 // ==================== PROFILE ENDPOINTS ====================
 
 // GET profile
-app.get('/api/profile', async (req, res) => {
+app.get('/api/profile', asyncHandler(async (req, res) => {
   const profile = (await Profile.findOne({}).lean()) || {};
   res.json({ success: true, data: profile });
-});
+}));
 
 // POST - Save / update profile (supports profile photo upload)
 app.post('/api/profile', requireAuth, upload.single('photo'), async (req, res) => {
@@ -576,7 +708,7 @@ async function sendContactEmail(msg) {
       replyTo: msg.email,
       subject: `New portfolio message from ${msg.name}`,
       text: `From: ${msg.name} <${msg.email}>\n\n${msg.message}`,
-      html: `<p><strong>From:</strong> ${msg.name} (${msg.email})</p><p>${msg.message.replace(/\n/g, '<br>')}</p>`
+      html: `<p><strong>From:</strong> ${escapeHtml(msg.name)} (${escapeHtml(msg.email)})</p><p>${escapeHtml(msg.message).replace(/\n/g, '<br>')}</p>`
     });
     return { sent: true };
   } catch (err) {
@@ -621,26 +753,28 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // GET all messages (owner only — contains visitors' contact details)
-app.get('/api/messages', requireAuth, async (req, res) => {
+app.get('/api/messages', requireAuth, asyncHandler(async (req, res) => {
   const messages = await Message.find({}).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: messages });
-});
+}));
 
 // DELETE a message (owner only)
-app.delete('/api/messages/:id', requireAuth, async (req, res) => {
+app.delete('/api/messages/:id', requireAuth, asyncHandler(async (req, res) => {
   const deleted = await Message.findOneAndDelete({ id: req.params.id }).lean();
   if (!deleted) return res.status(404).json({ success: false, message: 'Message not found' });
   res.json({ success: true, data: deleted, message: 'Message deleted.' });
-});
+}));
 
 // ==================== GENERIC RESOURCE ENDPOINTS ====================
 // Powers /api/skills, /api/education, /api/experience, /api/certificates,
 // /api/events — all MongoDB collections of { id, title, ...fields }.
 
-function buildResourceItem(def, body, imagePath, existing = {}) {
+// `images` is the item's full, ordered photo list (from resolveImages), or
+// null to leave the photos untouched.
+function buildResourceItem(def, body, images, existing = {}) {
   const out = { ...existing };
   Object.keys(body).forEach(key => {
-    if (key === 'id') return;
+    if (key === 'id' || PHOTO_BODY_KEYS.includes(key)) return;
     let val = body[key];
 
     if (def.arrayFields.includes(key)) {
@@ -662,7 +796,10 @@ function buildResourceItem(def, body, imagePath, existing = {}) {
     out[key] = val;
   });
 
-  if (def.hasImage && imagePath) out.image = imagePath;
+  if (def.hasImage && Array.isArray(images)) {
+    out.images = images;
+    out.image = images[0] || null;
+  }
   delete out._id;
   return out;
 }
@@ -670,16 +807,17 @@ function buildResourceItem(def, body, imagePath, existing = {}) {
 Object.entries(RESOURCES).forEach(([name, def]) => {
   const Model = resourceModel(name);
   // Always run multer so multipart/form-data text fields get parsed into
-  // req.body, even for resources (like skills) that don't store an image.
-  const uploadMiddleware = upload.single('image');
+  // req.body, even for resources (like skills) that don't store photos.
+  const uploadMiddleware = uploadPhotos;
+  const photoOptions = { isPrivate: !!def.private };
 
   // GET all — public, except resources marked `private: true` (owner only,
   // never exposed to site visitors even via a direct API call).
   const getGuards = def.private ? [requireAuth] : [];
-  app.get(`/api/${name}`, ...getGuards, async (req, res) => {
+  app.get(`/api/${name}`, ...getGuards, asyncHandler(async (req, res) => {
     const items = await Model.find({}).sort({ createdAt: -1 }).lean();
     res.json({ success: true, data: items });
-  });
+  }));
 
   // POST - create (owner only)
   app.post(`/api/${name}`, requireAuth, uploadMiddleware, async (req, res) => {
@@ -688,8 +826,8 @@ Object.entries(RESOURCES).forEach(([name, def]) => {
         return res.status(400).json({ success: false, message: 'title is required.' });
       }
 
-      const imagePath = def.hasImage ? await saveImageFile(req.file) : null;
-      const newItem = buildResourceItem(def, req.body, imagePath, {
+      const images = def.hasImage ? (await resolveImages(req, null, photoOptions)).images : null;
+      const newItem = buildResourceItem(def, req.body, images, {
         id: uuidv4(),
         createdAt: new Date().toISOString()
       });
@@ -707,17 +845,19 @@ Object.entries(RESOURCES).forEach(([name, def]) => {
       const existing = await Model.findOne({ id: req.params.id }).lean();
       if (!existing) return res.status(404).json({ success: false, message: `${def.label} not found` });
 
-      let imagePath = existing.image;
-      if (req.file) {
-        if (existing.image) await deleteImageByPath(existing.image);
-        imagePath = await saveImageFile(req.file);
-      }
+      let images = null;
+      let removed = [];
+      if (def.hasImage) ({ images, removed } = await resolveImages(req, existing, photoOptions));
 
-      const updatedItem = buildResourceItem(def, req.body, imagePath, {
+      const updatedItem = buildResourceItem(def, req.body, images, {
         ...existing,
         updatedAt: new Date().toISOString()
       });
-      await Model.updateOne({ id: req.params.id }, updatedItem);
+      // replaceOne, not updateOne: buildResourceItem can *remove* a field
+      // (e.g. clearing a skill's level), and updateOne would only $set the
+      // remaining keys, leaving the old value in the database.
+      await Model.replaceOne({ id: req.params.id }, updatedItem);
+      await deleteImages(removed);
 
       res.json({ success: true, data: updatedItem, message: `${def.label} updated successfully!` });
     } catch (err) {
@@ -730,7 +870,7 @@ Object.entries(RESOURCES).forEach(([name, def]) => {
     try {
       const deleted = await Model.findOneAndDelete({ id: req.params.id }).lean();
       if (!deleted) return res.status(404).json({ success: false, message: `${def.label} not found` });
-      if (deleted.image) await deleteImageByPath(deleted.image);
+      await deleteImages(itemImages(deleted));
 
       res.json({ success: true, data: deleted, message: `${def.label} deleted successfully!` });
     } catch (err) {
@@ -759,7 +899,7 @@ app.post('/api/research/:id/logs', requireAuth, async (req, res) => {
     const updated = await Research.findOneAndUpdate(
       { id: req.params.id },
       { $push: { logs: entry } },
-      { new: true }
+      { returnDocument: 'after' }
     ).lean();
     if (!updated) return res.status(404).json({ success: false, message: 'Research project not found' });
     res.status(201).json({ success: true, data: updated, message: 'Diary entry added.' });
@@ -773,7 +913,7 @@ app.delete('/api/research/:id/logs/:logId', requireAuth, async (req, res) => {
     const updated = await Research.findOneAndUpdate(
       { id: req.params.id },
       { $pull: { logs: { id: req.params.logId } } },
-      { new: true }
+      { returnDocument: 'after' }
     ).lean();
     if (!updated) return res.status(404).json({ success: false, message: 'Research project not found' });
     res.json({ success: true, data: updated, message: 'Diary entry removed.' });
@@ -792,11 +932,12 @@ function registerResearchSubTable(fieldName, requiredField) {
       if (!body[requiredField] || !String(body[requiredField]).trim()) {
         return res.status(400).json({ success: false, message: `${requiredField} is required.` });
       }
-      const entry = { id: uuidv4(), createdAt: new Date().toISOString(), ...body };
+      // Server-generated id/createdAt come last so the request can't override them.
+      const entry = { ...body, id: uuidv4(), createdAt: new Date().toISOString() };
       const updated = await Research.findOneAndUpdate(
         { id: req.params.id },
         { $push: { [fieldName]: entry } },
-        { new: true }
+        { returnDocument: 'after' }
       ).lean();
       if (!updated) return res.status(404).json({ success: false, message: 'Research project not found' });
       res.status(201).json({ success: true, data: updated, message: 'Added.' });
@@ -813,11 +954,18 @@ function registerResearchSubTable(fieldName, requiredField) {
       const index = list.findIndex(x => x.id === req.params.itemId);
       if (index === -1) return res.status(404).json({ success: false, message: 'Entry not found' });
 
-      list[index] = { ...list[index], ...req.body, updatedAt: new Date().toISOString() };
+      const current = list[index];
+      list[index] = {
+        ...current,
+        ...req.body,
+        id: current.id, // never let an edit change the entry's id
+        createdAt: current.createdAt,
+        updatedAt: new Date().toISOString()
+      };
       const updated = await Research.findOneAndUpdate(
         { id: req.params.id },
         { $set: { [fieldName]: list } },
-        { new: true }
+        { returnDocument: 'after' }
       ).lean();
       res.json({ success: true, data: updated, message: 'Updated.' });
     } catch (err) {
@@ -830,7 +978,7 @@ function registerResearchSubTable(fieldName, requiredField) {
       const updated = await Research.findOneAndUpdate(
         { id: req.params.id },
         { $pull: { [fieldName]: { id: req.params.itemId } } },
-        { new: true }
+        { returnDocument: 'after' }
       ).lean();
       if (!updated) return res.status(404).json({ success: false, message: 'Research project not found' });
       res.json({ success: true, data: updated, message: 'Removed.' });
@@ -851,7 +999,7 @@ registerResearchSubTable('tasks', 'title');
 app.post('/api/reset', requireAuth, async (req, res) => {
   try {
     const projects = await Project.find({}).lean();
-    for (const p of projects) if (p.image) await deleteImageByPath(p.image);
+    for (const p of projects) await deleteImages(itemImages(p));
     await Project.deleteMany({});
 
     const profile = await Profile.findOne({}).lean();
@@ -861,7 +1009,7 @@ app.post('/api/reset', requireAuth, async (req, res) => {
     for (const name of Object.keys(RESOURCES)) {
       const Model = resourceModel(name);
       const items = await Model.find({}).lean();
-      for (const item of items) if (item.image) await deleteImageByPath(item.image);
+      for (const item of items) await deleteImages(itemImages(item));
       await Model.deleteMany({});
     }
 
@@ -879,6 +1027,13 @@ app.use((err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ success: false, message: 'File too large. Max 5MB allowed.' });
     }
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({
+        success: false,
+        message: `Too many photos in one upload (max ${MAX_PHOTOS_PER_UPLOAD} at a time — save, then add more).`
+      });
+    }
+    return res.status(400).json({ success: false, message: err.message });
   }
   res.status(err.status || 500).json({ success: false, message: err.message || 'Internal server error' });
 });
@@ -888,13 +1043,32 @@ app.use((req, res) => {
 });
 
 // ==================== START SERVER ====================
+// Loads the owner auth secrets and seeds default content. Split out from
+// main() so the test suite can run it against an in-memory database.
+async function initApp() {
+  AUTH = await bootstrapAuth();
+  await seedAllDefaults();
+  await markPrivateImages();
+}
+
+// Images uploaded before private-image support existed have no `private`
+// flag. Mark every image used by a private resource (research) so it is
+// only served to the logged-in owner. Safe to run on every start.
+async function markPrivateImages() {
+  for (const [name, def] of Object.entries(RESOURCES)) {
+    if (!def.private) continue;
+    const items = await resourceModel(name).find({}, { image: 1, images: 1 }).lean();
+    const ids = items.flatMap(itemImages).map(imageIdFromPath).filter(Boolean);
+    if (ids.length) await Image.updateMany({ id: { $in: ids } }, { $set: { private: true } });
+  }
+}
+
 async function main() {
   console.log('Connecting to MongoDB Atlas...');
   await connectDB();
   console.log('✅ Connected to MongoDB Atlas');
 
-  AUTH = await bootstrapAuth();
-  await seedAllDefaults();
+  await initApp();
 
   app.listen(PORT, () => {
     console.log('');
@@ -910,7 +1084,13 @@ async function main() {
   });
 }
 
-main().catch(err => {
-  console.error('❌ Failed to start server:', err.message);
-  process.exit(1);
-});
+module.exports = { app, initApp, buildResourceItem, RESOURCES };
+
+// Only start listening when run directly (`node server.js`), not when the
+// test suite require()s this file.
+if (require.main === module) {
+  main().catch(err => {
+    console.error('❌ Failed to start server:', err.message);
+    process.exit(1);
+  });
+}

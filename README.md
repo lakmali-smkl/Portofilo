@@ -107,18 +107,26 @@ Nothing needs to be hand-edited in `index.html` anymore — once logged in, ever
 
 | Tab | What it edits |
 |---|---|
-| **Projects** | Featured project cards — title, category, description, tech stack, links, photo |
+| **Projects** | Featured project cards — title, category, description, tech stack, links, photos |
 | **Skills** | Skills & Expertise — name, category, badge, and an optional proficiency % (leave blank to show as a plain tag, like the Soft Skills group) |
-| **Education** | The Education timeline — institution, period, degree, status, description, tags, optional photo |
-| **Experience** | Experience & Activities cards — title, badge, description, tags, optional photo |
-| **Events** | Coding competitions, conferences, tech talks — title, type, description, date, location, link, photo |
-| **Certificates** | Certificates & Achievements — name, issuing org, date, description, optional certificate image |
+| **Education** | The Education timeline — institution, period, degree, status, description, tags, photos |
+| **Experience** | Experience & Activities cards — title, badge, description, tags, photos |
+| **Events** | Coding competitions, conferences, tech talks — title, type, description, date, location, link, photos |
+| **Certificates** | Certificates — name, issuing org, date, description, certificate photos |
+| **Achievements** | Achievements & Awards — title, type (award, scholarship, competition…), awarded by, date, description, link, photos |
+| **Publications** | Publications & Blog — title, type (article, blog post, paper…), where it was published, date, summary, link, tags, photos |
+| **Gallery** | Photo Gallery albums — title, date, description, and as many photos as you like |
+| **Testimonials** | Quotes from lecturers, mentors or teammates — name, role, quote, profile link, photo(s) |
 | **Research (Private)** | Opens the full-screen **Research Workspace** — see below. Never shown to visitors, and the data can't be read even via a direct API call without logging in |
 | **Messages** | Your Contact form inbox — every visitor message is saved here, with an optional email copy (see **Email notifications**, below) |
 | **Profile & Links** | Your name, degree, photo, email, phone, LinkedIn, GitHub, location, hero bio, the full **About Me** text, and your password |
 | **Backup & Export** | Download a full JSON snapshot of everything, or restore the original default template (deletes all custom content and photos) |
 
 Every tab follows the same pattern: fill in the form and **Save**, or click **Edit** / **Delete** on an item in the list below it.
+
+**Photos:** every section except Skills and your Profile photo (which stays a single photo) takes **any number of photos** per item. Pick several at once, or keep adding more batches before saving (max 5MB each, up to 30 new photos per save; save, then add more). The first photo is the cover: click ★ on a photo to make it the cover, or × to remove it. On the public site, items with more than one photo show a photo-count badge, and clicking any photo opens a full-screen slideshow (arrow keys or swipe to browse, Esc to close).
+
+**Achievements, Publications, Gallery and Testimonials** stay hidden on the public site, and out of the menu, until you add something to them, so your portfolio never shows an empty section. Once they have content, they appear under **More** in the top menu.
 
 Two things still live directly in `index.html`, since they're files rather than form fields:
 - **Profile photo fallback**: if `images/profile.jpg` exists it's used as the very first paint before the backend responds; after that, whatever you upload via the Profile tab takes over.
@@ -160,6 +168,18 @@ cd backend
 node migrate-to-mongo.js
 ```
 This copies your existing profile, projects, skills, education, experience, certificates, messages, owner login, and photos into MongoDB without touching anything that's already there. After it finishes, `backend/data/` and `backend/uploads/` are no longer used and can be left alone or deleted.
+
+---
+
+## 🧪 Running the Tests
+
+The backend has an automated test suite (in `backend/test/`) covering login, every API endpoint, image uploads, the contact form, the research workspace, and reset.
+```bash
+cd backend
+npm install   # first time only
+npm test
+```
+The tests run against a temporary in-memory MongoDB, so they **never touch your real Atlas database** and never send real email — no `.env` needed. The first run downloads a MongoDB binary, so it takes a little longer.
 
 ---
 

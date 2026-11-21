@@ -77,6 +77,286 @@ document.addEventListener('DOMContentLoaded', () => {
     return res;
   }
 
+  // Loads an owner-only image (e.g. a research project photo) with the
+  // bearer token and returns an object URL usable as an <img> src. The
+  // caller owns the URL and should revoke it when done.
+  async function loadPrivateImage(imagePath) {
+    try {
+      const res = await authFetch(resolveImageUrl(imagePath));
+      if (!res.ok) return null;
+      return URL.createObjectURL(await res.blob());
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* ==================== 2b. PHOTOS — helpers, admin photo manager, lightbox ==================== */
+  // Every item (except the profile) can hold any number of photos in
+  // `images`; the first is the cover. Older items only have `image`.
+  function itemImages(item) {
+    if (!item) return [];
+    if (Array.isArray(item.images)) return item.images.filter(Boolean);
+    return item.image ? [item.image] : [];
+  }
+
+  const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+  const MAX_PHOTOS_PER_SAVE = 30;
+
+  // Admin widget: shows an item's saved photos plus newly picked ones, lets
+  // the owner remove any, make a saved photo the cover, and keep adding
+  // more in several batches. appendTo() writes `keepImages` (saved photos to
+  // keep, in order) and each new file as `images` into the FormData.
+  function createPhotoManager({ input, container, isPrivate = false }) {
+    let saved = [];   // paths already stored on the item, in order
+    let pending = []; // { file, url } picked but not yet uploaded
+    const privateUrls = new Map(); // path -> object URL (private photos only)
+
+    function clearPending() {
+      pending.forEach(p => URL.revokeObjectURL(p.url));
+      pending = [];
+    }
+
+    function clearPrivateUrls() {
+      privateUrls.forEach(url => URL.revokeObjectURL(url));
+      privateUrls.clear();
+    }
+
+    function tile({ src, dataSrc, kind, index, isCover }) {
+      const label = kind === 'saved' ? `Saved photo ${index + 1}` : `New photo ${index + 1}`;
+      return `
+        <div class="photo-tile ${isCover ? 'is-cover' : ''}" data-kind="${kind}" data-index="${index}">
+          <img ${src ? `src="${src}"` : ''} ${dataSrc ? `data-private-src="${escapeHtml(dataSrc)}"` : ''} alt="${label}" />
+          ${isCover ? '<span class="photo-tile-flag">Cover</span>' : ''}
+          ${kind === 'pending' ? '<span class="photo-tile-flag photo-tile-flag-new">New</span>' : ''}
+          <div class="photo-tile-actions">
+            ${kind === 'saved' && !isCover ? `<button type="button" class="photo-tile-btn" data-act="cover" title="Make cover photo" aria-label="Make ${label} the cover">★</button>` : ''}
+            <button type="button" class="photo-tile-btn photo-tile-remove" data-act="remove" title="Remove photo" aria-label="Remove ${label}">&times;</button>
+          </div>
+        </div>`;
+    }
+
+    function render() {
+      if (!container) return;
+      const total = saved.length + pending.length;
+      if (total === 0) {
+        container.innerHTML = '';
+        container.hidden = true;
+        return;
+      }
+      container.hidden = false;
+      const tiles = [
+        ...saved.map((path, i) => tile(isPrivate
+          ? { dataSrc: path, kind: 'saved', index: i, isCover: i === 0, src: privateUrls.get(path) }
+          : { src: escapeHtml(resolveImageUrl(path)), kind: 'saved', index: i, isCover: i === 0 })),
+        ...pending.map((p, i) => tile({ src: p.url, kind: 'pending', index: i, isCover: saved.length === 0 && i === 0 }))
+      ];
+      container.innerHTML = `
+        <div class="photo-manager-head">${total} photo${total === 1 ? '' : 's'}${pending.length ? ` · ${pending.length} not saved yet` : ''}</div>
+        <div class="photo-tiles">${tiles.join('')}</div>`;
+
+      if (isPrivate) {
+        container.querySelectorAll('img[data-private-src]:not([src])').forEach(img => {
+          const path = img.getAttribute('data-private-src');
+          loadPrivateImage(path).then(url => {
+            if (!url) return;
+            if (!saved.includes(path)) { URL.revokeObjectURL(url); return; }
+            privateUrls.set(path, url);
+            img.src = url;
+          });
+        });
+      }
+    }
+
+    if (container) {
+      container.hidden = true;
+      container.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-act]');
+        if (!btn) return;
+        const tileEl = btn.closest('.photo-tile');
+        const kind = tileEl.getAttribute('data-kind');
+        const index = parseInt(tileEl.getAttribute('data-index'), 10);
+        const act = btn.getAttribute('data-act');
+
+        if (act === 'remove') {
+          if (kind === 'saved') {
+            saved.splice(index, 1);
+          } else {
+            URL.revokeObjectURL(pending[index].url);
+            pending.splice(index, 1);
+          }
+        } else if (act === 'cover' && kind === 'saved') {
+          saved.unshift(saved.splice(index, 1)[0]);
+        }
+        render();
+      });
+    }
+
+    if (input) {
+      input.addEventListener('change', () => {
+        const skipped = [];
+        Array.from(input.files || []).forEach(file => {
+          if (!/^image\//.test(file.type)) { skipped.push(`${file.name} (not an image)`); return; }
+          if (file.size > MAX_PHOTO_BYTES) { skipped.push(`${file.name} (over 5MB)`); return; }
+          if (pending.length >= MAX_PHOTOS_PER_SAVE) { skipped.push(`${file.name} (limit of ${MAX_PHOTOS_PER_SAVE} new photos per save — save, then add more)`); return; }
+          pending.push({ file, url: URL.createObjectURL(file) });
+        });
+        input.value = ''; // so the same files can be picked again, and more batches added
+        if (skipped.length) alert(`Some photos were skipped:\n• ${skipped.join('\n• ')}`);
+        render();
+      });
+    }
+
+    return {
+      setSaved(paths) {
+        clearPending();
+        clearPrivateUrls();
+        saved = [...paths];
+        render();
+      },
+      reset() {
+        clearPending();
+        clearPrivateUrls();
+        saved = [];
+        if (input) input.value = '';
+        render();
+      },
+      appendTo(formData) {
+        formData.append('keepImages', JSON.stringify(saved));
+        pending.forEach(p => formData.append('images', p.file));
+      },
+      count() { return saved.length + pending.length; }
+    };
+  }
+
+  // ---- Public photo viewer (lightbox) ----
+  // Rendered cards register their photo list under a key; a click on any
+  // element with data-photos="<key>" opens the slideshow.
+  const photoSets = new Map();
+
+  function registerPhotos(key, images, caption) {
+    photoSets.set(key, { images, caption: caption || '' });
+    return key;
+  }
+
+  function photoCountBadge(count) {
+    if (count < 2) return '';
+    return `<span class="photo-count-badge" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg>${count}
+    </span>`;
+  }
+
+  // A clickable cover photo that opens all of the item's photos.
+  // variant: 'fill' (covers a card banner), 'thumb' (small square), 'block' (full-width).
+  function photoCover(key, images, title, variant, imgClass) {
+    registerPhotos(key, images, title);
+    const n = images.length;
+    return `
+      <button type="button" class="photo-open photo-open-${variant}" data-photos="${escapeHtml(key)}" data-index="0"
+        aria-label="View ${n} photo${n === 1 ? '' : 's'}: ${escapeHtml(title)}">
+        <img class="${imgClass}" src="${escapeHtml(resolveImageUrl(images[0]))}" alt="${escapeHtml(title)}" loading="lazy" />
+        ${photoCountBadge(n)}
+      </button>`;
+  }
+
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxCaption = document.getElementById('lightbox-caption-text');
+  const lightboxCounter = document.getElementById('lightbox-counter');
+  const lightboxThumbs = document.getElementById('lightbox-thumbs');
+  const lightboxPrev = document.getElementById('lightbox-prev');
+  const lightboxNext = document.getElementById('lightbox-next');
+  const lightboxClose = document.getElementById('lightbox-close');
+  let lightboxSet = null;
+  let lightboxIndex = 0;
+  let lightboxReturnFocus = null;
+
+  function showLightboxPhoto(index) {
+    if (!lightboxSet) return;
+    const total = lightboxSet.images.length;
+    lightboxIndex = (index + total) % total;
+    lightboxImg.src = resolveImageUrl(lightboxSet.images[lightboxIndex]);
+    lightboxImg.alt = `${lightboxSet.caption} — photo ${lightboxIndex + 1} of ${total}`;
+    lightboxCaption.textContent = lightboxSet.caption;
+    lightboxCounter.textContent = total > 1 ? `${lightboxIndex + 1} / ${total}` : '';
+    lightboxThumbs.querySelectorAll('button').forEach((b, i) => {
+      b.classList.toggle('active', i === lightboxIndex);
+      if (i === lightboxIndex) b.scrollIntoView({ block: 'nearest', inline: 'center' });
+    });
+  }
+
+  function openLightbox(key, index = 0) {
+    const set = photoSets.get(key);
+    if (!lightbox || !set || !set.images.length) return;
+    lightboxSet = set;
+    lightboxReturnFocus = document.activeElement;
+    const multiple = set.images.length > 1;
+    lightboxPrev.hidden = !multiple;
+    lightboxNext.hidden = !multiple;
+    lightboxThumbs.hidden = !multiple;
+    lightboxThumbs.innerHTML = multiple
+      ? set.images.map((p, i) => `<button type="button" data-index="${i}" aria-label="Show photo ${i + 1}"><img src="${escapeHtml(resolveImageUrl(p))}" alt="" loading="lazy" /></button>`).join('')
+      : '';
+    lightbox.classList.add('open');
+    lightbox.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    showLightboxPhoto(index);
+    lightboxClose.focus();
+  }
+
+  function closeLightbox() {
+    if (!lightbox || !lightbox.classList.contains('open')) return;
+    lightbox.classList.remove('open');
+    lightbox.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    lightboxImg.removeAttribute('src');
+    lightboxSet = null;
+    if (lightboxReturnFocus && lightboxReturnFocus.focus) lightboxReturnFocus.focus();
+  }
+
+  function isLightboxOpen() {
+    return !!(lightbox && lightbox.classList.contains('open'));
+  }
+
+  document.addEventListener('click', (e) => {
+    const opener = e.target.closest('[data-photos]');
+    if (opener) {
+      e.preventDefault();
+      openLightbox(opener.getAttribute('data-photos'), parseInt(opener.getAttribute('data-index'), 10) || 0);
+    }
+  });
+
+  if (lightbox) {
+    lightboxPrev.addEventListener('click', () => showLightboxPhoto(lightboxIndex - 1));
+    lightboxNext.addEventListener('click', () => showLightboxPhoto(lightboxIndex + 1));
+    lightboxClose.addEventListener('click', closeLightbox);
+    lightboxThumbs.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-index]');
+      if (b) showLightboxPhoto(parseInt(b.getAttribute('data-index'), 10));
+    });
+    // Click on the dark backdrop (not the photo or controls) closes it
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox || e.target.classList.contains('lightbox-figure')) closeLightbox();
+    });
+    // Swipe left/right on touch screens
+    let touchStartX = null;
+    lightbox.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    lightbox.addEventListener('touchend', (e) => {
+      if (touchStartX === null || !lightboxSet || lightboxSet.images.length < 2) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) showLightboxPhoto(lightboxIndex + (dx < 0 ? 1 : -1));
+      touchStartX = null;
+    });
+  }
+
+  // Shows a public section (and its nav/footer links) only when it has content.
+  function setSectionVisible(sectionId, visible) {
+    const section = document.getElementById(sectionId);
+    if (section) section.hidden = !visible;
+    document.querySelectorAll(`[data-section-link="${sectionId}"]`).forEach(el => { el.hidden = !visible; });
+    const navMore = document.getElementById('nav-more');
+    if (navMore) navMore.hidden = !navMore.querySelector('[data-section-link]:not([hidden])');
+  }
+
   /* ==================== 3. FALLBACK DATA & CACHES ==================== */
   // Fallback data shown if the backend server isn't reachable
   const defaultProjects = [
@@ -131,6 +411,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedCertificates = [];
   let cachedEvents = [];
   let cachedResearch = [];
+  let cachedAchievements = [];
+  let cachedPublications = [];
+  let cachedTestimonials = [];
+  let cachedGallery = [];
 
   async function fetchProjects() {
     try {
@@ -173,6 +457,10 @@ document.addEventListener('DOMContentLoaded', () => {
   async function fetchExperience() { cachedExperience = await fetchResource('experience'); return cachedExperience; }
   async function fetchCertificates() { cachedCertificates = await fetchResource('certificates'); return cachedCertificates; }
   async function fetchEvents() { cachedEvents = await fetchResource('events'); return cachedEvents; }
+  async function fetchAchievements() { cachedAchievements = await fetchResource('achievements'); return cachedAchievements; }
+  async function fetchPublications() { cachedPublications = await fetchResource('publications'); return cachedPublications; }
+  async function fetchTestimonials() { cachedTestimonials = await fetchResource('testimonials'); return cachedTestimonials; }
+  async function fetchGallery() { cachedGallery = await fetchResource('gallery'); return cachedGallery; }
 
   // Research projects are private: the GET route itself requires the owner's
   // login, so this (unlike fetchResource above) must use authFetch — and
@@ -257,8 +545,9 @@ document.addEventListener('DOMContentLoaded', () => {
         : '';
 
       const bannerClass = `project-banner-${(index % 4) + 1}`;
-      const bannerMedia = proj.image
-        ? `<img class="project-banner-img" src="${resolveImageUrl(proj.image)}" alt="${escapeHtml(proj.title)}" />`
+      const photos = itemImages(proj);
+      const bannerMedia = photos.length
+        ? photoCover(`projects:${proj.id}`, photos, proj.title, 'fill', 'project-banner-img')
         : `<div class="banner-icon">${getBannerIcon(proj.category)}</div>`;
 
       card.innerHTML = `
@@ -471,6 +760,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==================== 9. PROJECT FORM (Add / Edit / Delete) ==================== */
+  // Shared bits for the admin lists: cover thumbnail + "· 3 photos".
+  function adminThumb(item) {
+    const photos = itemImages(item);
+    return photos.length
+      ? `<img class="admin-proj-thumb" src="${escapeHtml(resolveImageUrl(photos[0]))}" alt="${escapeHtml(item.title)}" />`
+      : '';
+  }
+
+  function photoCountText(item) {
+    const n = itemImages(item).length;
+    return n > 1 ? ` • ${n} photos` : '';
+  }
+
   const manageProjectForm = document.getElementById('manage-project-form');
   const editProjectId = document.getElementById('edit-project-id');
   const projTitle = document.getElementById('proj-title');
@@ -479,8 +781,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const projTech = document.getElementById('proj-tech');
   const projGithub = document.getElementById('proj-github');
   const projDemo = document.getElementById('proj-demo');
-  const projImageFile = document.getElementById('proj-image-file');
-  const projImagePreview = document.getElementById('proj-image-preview');
+  const projectPhotos = createPhotoManager({
+    input: document.getElementById('proj-image-file'),
+    container: document.getElementById('proj-photo-manager')
+  });
   const projectFormTitle = document.getElementById('project-form-title');
   const btnCancelProjectEdit = document.getElementById('btn-cancel-project-edit');
   const adminProjectList = document.getElementById('admin-project-list');
@@ -497,10 +801,10 @@ document.addEventListener('DOMContentLoaded', () => {
     adminProjectList.innerHTML = projects.map(p => `
       <div class="admin-project-item">
         <div class="admin-proj-left">
-          ${p.image ? `<img class="admin-proj-thumb" src="${resolveImageUrl(p.image)}" alt="${escapeHtml(p.title)}" />` : ''}
+          ${adminThumb(p)}
           <div class="admin-proj-info">
             <span class="admin-proj-name">${escapeHtml(p.title)}</span>
-            <span class="admin-proj-meta">${escapeHtml(p.category.toUpperCase())} &bull; ${escapeHtml(p.tech.join(', '))}</span>
+            <span class="admin-proj-meta">${escapeHtml(p.category.toUpperCase())} &bull; ${escapeHtml(p.tech.join(', '))}${photoCountText(p)}</span>
           </div>
         </div>
         <div class="admin-proj-actions">
@@ -523,16 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
           projGithub.value = proj.github || '';
           projDemo.value = proj.demo || '';
 
-          if (projImageFile) projImageFile.value = '';
-          if (projImagePreview) {
-            if (proj.image) {
-              projImagePreview.src = resolveImageUrl(proj.image);
-              projImagePreview.hidden = false;
-            } else {
-              projImagePreview.hidden = true;
-              projImagePreview.removeAttribute('src');
-            }
-          }
+          projectPhotos.setSaved(itemImages(proj));
 
           projectFormTitle.textContent = 'Edit Project';
           if (btnCancelProjectEdit) btnCancelProjectEdit.style.display = 'inline-flex';
@@ -561,25 +856,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!manageProjectForm) return;
     manageProjectForm.reset();
     editProjectId.value = '';
-    if (projImagePreview) {
-      projImagePreview.hidden = true;
-      projImagePreview.removeAttribute('src');
-    }
+    projectPhotos.reset();
     projectFormTitle.textContent = 'Add New Project';
     if (btnCancelProjectEdit) btnCancelProjectEdit.style.display = 'none';
-  }
-
-  if (projImageFile && projImagePreview) {
-    projImageFile.addEventListener('change', () => {
-      const file = projImageFile.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        projImagePreview.src = e.target.result;
-        projImagePreview.hidden = false;
-      };
-      reader.readAsDataURL(file);
-    });
   }
 
   if (btnCancelProjectEdit) {
@@ -608,9 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
       formData.append('tech', JSON.stringify(tech));
       formData.append('github', github);
       formData.append('demo', demo);
-      if (projImageFile && projImageFile.files[0]) {
-        formData.append('image', projImageFile.files[0]);
-      }
+      projectPhotos.appendTo(formData);
 
       const existingId = editProjectId.value;
       const url = existingId ? `${API_PROJECTS}/${existingId}` : API_PROJECTS;
@@ -639,29 +916,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wires one add/edit form + one list (Edit & Delete) for a flat-array
   // backend resource, following the exact same pattern as Projects above.
   function setupResourceAdmin(cfg) {
+    // Sections with photos pass `photoPrefix` (e.g. 'edu' -> #edu-image-file
+    // and #edu-photo-manager) and get the multi-photo manager.
+    const photos = cfg.photoPrefix
+      ? createPhotoManager({
+          input: document.getElementById(`${cfg.photoPrefix}-image-file`),
+          container: document.getElementById(`${cfg.photoPrefix}-photo-manager`)
+        })
+      : null;
+
     function resetForm() {
       if (!cfg.form) return;
       cfg.form.reset();
       if (cfg.idInput) cfg.idInput.value = '';
-      if (cfg.imagePreview) {
-        cfg.imagePreview.hidden = true;
-        cfg.imagePreview.removeAttribute('src');
-      }
+      if (photos) photos.reset();
       if (cfg.formTitleEl) cfg.formTitleEl.textContent = cfg.addTitleText;
       if (cfg.cancelBtn) cfg.cancelBtn.style.display = 'none';
-    }
-
-    if (cfg.imageInput && cfg.imagePreview) {
-      cfg.imageInput.addEventListener('change', () => {
-        const file = cfg.imageInput.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          cfg.imagePreview.src = e.target.result;
-          cfg.imagePreview.hidden = false;
-        };
-        reader.readAsDataURL(file);
-      });
     }
 
     if (cfg.cancelBtn) cfg.cancelBtn.addEventListener('click', resetForm);
@@ -678,10 +948,10 @@ document.addEventListener('DOMContentLoaded', () => {
       cfg.listEl.innerHTML = items.map(item => `
         <div class="admin-project-item">
           <div class="admin-proj-left">
-            ${item.image ? `<img class="admin-proj-thumb" src="${resolveImageUrl(item.image)}" alt="${escapeHtml(item.title)}" />` : ''}
+            ${photos ? adminThumb(item) : ''}
             <div class="admin-proj-info">
               <span class="admin-proj-name">${escapeHtml(item.title)}</span>
-              <span class="admin-proj-meta">${escapeHtml(cfg.buildMeta(item))}</span>
+              <span class="admin-proj-meta">${escapeHtml(cfg.buildMeta(item) + (photos ? photoCountText(item) : ''))}</span>
             </div>
           </div>
           <div class="admin-proj-actions">
@@ -707,16 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
 
-          if (cfg.imageInput) cfg.imageInput.value = '';
-          if (cfg.imagePreview) {
-            if (item.image) {
-              cfg.imagePreview.src = resolveImageUrl(item.image);
-              cfg.imagePreview.hidden = false;
-            } else {
-              cfg.imagePreview.hidden = true;
-              cfg.imagePreview.removeAttribute('src');
-            }
-          }
+          if (photos) photos.setSaved(itemImages(item));
 
           if (cfg.formTitleEl) cfg.formTitleEl.textContent = cfg.editTitleText;
           if (cfg.cancelBtn) cfg.cancelBtn.style.display = 'inline-flex';
@@ -749,15 +1010,17 @@ document.addEventListener('DOMContentLoaded', () => {
           alert('Please fill in the required fields.');
           return;
         }
+        if (cfg.requirePhotos && photos && photos.count() === 0) {
+          alert('Please add at least one photo.');
+          return;
+        }
 
         const formData = new FormData();
         cfg.fields.forEach(f => {
           if (!f.el) return;
           formData.append(f.key, f.el.value.trim());
         });
-        if (cfg.imageInput && cfg.imageInput.files[0]) {
-          formData.append('image', cfg.imageInput.files[0]);
-        }
+        if (photos) photos.appendTo(formData);
 
         const existingId = cfg.idInput ? cfg.idInput.value : '';
         const url = existingId ? `${cfg.apiPath}/${existingId}` : cfg.apiPath;
@@ -820,8 +1083,7 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl: document.getElementById('admin-education-list'),
     emptyText: 'No education entries added yet.',
     confirmDeleteText: 'Remove this education entry?',
-    imageInput: document.getElementById('edu-image-file'),
-    imagePreview: document.getElementById('edu-image-preview'),
+    photoPrefix: 'edu',
     fields: [
       { key: 'title', el: document.getElementById('edu-title'), required: true },
       { key: 'period', el: document.getElementById('edu-period') },
@@ -847,8 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl: document.getElementById('admin-experience-list'),
     emptyText: 'No experience entries added yet.',
     confirmDeleteText: 'Remove this entry?',
-    imageInput: document.getElementById('exp-image-file'),
-    imagePreview: document.getElementById('exp-image-preview'),
+    photoPrefix: 'exp',
     fields: [
       { key: 'title', el: document.getElementById('exp-title'), required: true },
       { key: 'badge', el: document.getElementById('exp-badge') },
@@ -872,8 +1133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl: document.getElementById('admin-events-list'),
     emptyText: 'No events added yet.',
     confirmDeleteText: 'Remove this event?',
-    imageInput: document.getElementById('event-image-file'),
-    imagePreview: document.getElementById('event-image-preview'),
+    photoPrefix: 'event',
     fields: [
       { key: 'title', el: document.getElementById('event-title'), required: true },
       { key: 'type', el: document.getElementById('event-type') },
@@ -899,8 +1159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl: document.getElementById('admin-certificates-list'),
     emptyText: 'No certificates added yet.',
     confirmDeleteText: 'Remove this certificate?',
-    imageInput: document.getElementById('cert-image-file'),
-    imagePreview: document.getElementById('cert-image-preview'),
+    photoPrefix: 'cert',
     fields: [
       { key: 'title', el: document.getElementById('cert-title-input'), required: true },
       { key: 'organization', el: document.getElementById('cert-org') },
@@ -910,6 +1169,113 @@ document.addEventListener('DOMContentLoaded', () => {
     getCache: () => cachedCertificates,
     buildMeta: (c) => [c.organization, c.date].filter(Boolean).join(' • ') || 'Certificate',
     afterChange: () => renderCertificates()
+  });
+
+  const ACHIEVEMENT_TYPES = { award: 'Award', competition: 'Competition', scholarship: 'Scholarship', academic: 'Academic Honour', recognition: 'Recognition', other: 'Achievement' };
+  const PUBLICATION_TYPES = { article: 'Article', blog: 'Blog Post', paper: 'Research Paper', thesis: 'Thesis / Report', other: 'Publication' };
+
+  const achievementsAdmin = setupResourceAdmin({
+    apiPath: `${API_BASE}/api/achievements`,
+    form: document.getElementById('manage-achievement-form'),
+    idInput: document.getElementById('edit-achievement-id'),
+    formTitleEl: document.getElementById('achievement-form-title'),
+    addTitleText: 'Add Achievement / Award',
+    editTitleText: 'Edit Achievement / Award',
+    cancelBtn: document.getElementById('btn-cancel-achievement-edit'),
+    saveBtnId: 'btn-save-achievement',
+    listEl: document.getElementById('admin-achievements-list'),
+    emptyText: 'No achievements added yet. This section stays hidden on your site until you add one.',
+    confirmDeleteText: 'Remove this achievement?',
+    photoPrefix: 'ach',
+    fields: [
+      { key: 'title', el: document.getElementById('ach-title'), required: true },
+      { key: 'category', el: document.getElementById('ach-category') },
+      { key: 'issuer', el: document.getElementById('ach-issuer') },
+      { key: 'date', el: document.getElementById('ach-date') },
+      { key: 'description', el: document.getElementById('ach-desc') },
+      { key: 'link', el: document.getElementById('ach-link') }
+    ],
+    getCache: () => cachedAchievements,
+    buildMeta: (a) => [ACHIEVEMENT_TYPES[a.category] || 'Achievement', a.issuer, a.date].filter(Boolean).join(' • '),
+    afterChange: () => renderAchievements()
+  });
+
+  const publicationsAdmin = setupResourceAdmin({
+    apiPath: `${API_BASE}/api/publications`,
+    form: document.getElementById('manage-publication-form'),
+    idInput: document.getElementById('edit-publication-id'),
+    formTitleEl: document.getElementById('publication-form-title'),
+    addTitleText: 'Add Publication / Post',
+    editTitleText: 'Edit Publication / Post',
+    cancelBtn: document.getElementById('btn-cancel-publication-edit'),
+    saveBtnId: 'btn-save-publication',
+    listEl: document.getElementById('admin-publications-list'),
+    emptyText: 'No publications added yet. This section stays hidden on your site until you add one.',
+    confirmDeleteText: 'Remove this publication?',
+    photoPrefix: 'pub',
+    fields: [
+      { key: 'title', el: document.getElementById('pub-title'), required: true },
+      { key: 'type', el: document.getElementById('pub-type') },
+      { key: 'publisher', el: document.getElementById('pub-publisher') },
+      { key: 'date', el: document.getElementById('pub-date') },
+      { key: 'description', el: document.getElementById('pub-desc') },
+      { key: 'link', el: document.getElementById('pub-link') },
+      { key: 'tags', el: document.getElementById('pub-tags'), type: 'tags' }
+    ],
+    getCache: () => cachedPublications,
+    buildMeta: (p) => [PUBLICATION_TYPES[p.type] || 'Publication', p.publisher, p.date].filter(Boolean).join(' • '),
+    afterChange: () => renderPublications()
+  });
+
+  const galleryAdmin = setupResourceAdmin({
+    apiPath: `${API_BASE}/api/gallery`,
+    form: document.getElementById('manage-gallery-form'),
+    idInput: document.getElementById('edit-gallery-id'),
+    formTitleEl: document.getElementById('gallery-form-title'),
+    addTitleText: 'Add Gallery Album',
+    editTitleText: 'Edit Gallery Album',
+    cancelBtn: document.getElementById('btn-cancel-gallery-edit'),
+    saveBtnId: 'btn-save-gallery',
+    listEl: document.getElementById('admin-gallery-list'),
+    emptyText: 'No albums yet. The Gallery section stays hidden on your site until you add one with photos.',
+    confirmDeleteText: 'Delete this album and all of its photos?',
+    photoPrefix: 'gal',
+    requirePhotos: true,
+    fields: [
+      { key: 'title', el: document.getElementById('gal-title'), required: true },
+      { key: 'date', el: document.getElementById('gal-date') },
+      { key: 'description', el: document.getElementById('gal-desc') }
+    ],
+    getCache: () => cachedGallery,
+    buildMeta: (g) => {
+      const n = itemImages(g).length;
+      return [formatDate(g.date), `${n} photo${n === 1 ? '' : 's'}`].filter(Boolean).join(' • ');
+    },
+    afterChange: () => renderGallery()
+  });
+
+  const testimonialsAdmin = setupResourceAdmin({
+    apiPath: `${API_BASE}/api/testimonials`,
+    form: document.getElementById('manage-testimonial-form'),
+    idInput: document.getElementById('edit-testimonial-id'),
+    formTitleEl: document.getElementById('testimonial-form-title'),
+    addTitleText: 'Add Testimonial',
+    editTitleText: 'Edit Testimonial',
+    cancelBtn: document.getElementById('btn-cancel-testimonial-edit'),
+    saveBtnId: 'btn-save-testimonial',
+    listEl: document.getElementById('admin-testimonials-list'),
+    emptyText: 'No testimonials yet. This section stays hidden on your site until you add one.',
+    confirmDeleteText: 'Remove this testimonial?',
+    photoPrefix: 'testi',
+    fields: [
+      { key: 'title', el: document.getElementById('testi-name'), required: true },
+      { key: 'role', el: document.getElementById('testi-role') },
+      { key: 'quote', el: document.getElementById('testi-quote'), required: true },
+      { key: 'link', el: document.getElementById('testi-link') }
+    ],
+    getCache: () => cachedTestimonials,
+    buildMeta: (t) => t.role || 'Testimonial',
+    afterChange: () => renderTestimonials()
   });
 
   /* ==================== 10b. RESEARCH WORKSPACE (private, full-screen) ====================
@@ -926,8 +1292,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const researchUnsavedHint = document.getElementById('research-unsaved-hint');
   const researchForm = document.getElementById('manage-research-form');
   const researchIdInput = document.getElementById('edit-research-id');
-  const researchImageInput = document.getElementById('research-image-file');
-  const researchImagePreview = document.getElementById('research-image-preview');
+  // Research photos are private: the manager loads them with the owner's
+  // token instead of a plain <img src>.
+  const researchPhotos = createPhotoManager({
+    input: document.getElementById('research-image-file'),
+    container: document.getElementById('research-photo-manager'),
+    isPrivate: true
+  });
   const btnNewResearch = document.getElementById('btn-new-research');
   const btnDeleteResearch = document.getElementById('btn-delete-research');
   const researchDiaryForm = document.getElementById('research-diary-form');
@@ -1046,16 +1417,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    if (researchImageInput) researchImageInput.value = '';
-    if (researchImagePreview) {
-      if (item.image) {
-        researchImagePreview.src = resolveImageUrl(item.image);
-        researchImagePreview.hidden = false;
-      } else {
-        researchImagePreview.hidden = true;
-        researchImagePreview.removeAttribute('src');
-      }
-    }
+    researchPhotos.setSaved(itemImages(item));
 
     renderResearchTimeline(item);
     papersTable.renderTable();
@@ -1489,19 +1851,6 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  if (researchImageInput && researchImagePreview) {
-    researchImageInput.addEventListener('change', () => {
-      const file = researchImageInput.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        researchImagePreview.src = e.target.result;
-        researchImagePreview.hidden = false;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
   if (btnNewResearch) {
     btnNewResearch.addEventListener('click', () => {
       selectedResearchId = null;
@@ -1510,10 +1859,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (researchForm) researchForm.reset();
       if (researchIdInput) researchIdInput.value = '';
       if (researchDetailTitleEl) researchDetailTitleEl.textContent = 'New Research Project';
-      if (researchImagePreview) {
-        researchImagePreview.hidden = true;
-        researchImagePreview.removeAttribute('src');
-      }
+      researchPhotos.reset();
       if (researchTimelineEl) researchTimelineEl.innerHTML = '';
       if (researchTaskListEl) researchTaskListEl.innerHTML = '';
       papersTable.renderTable();
@@ -1540,9 +1886,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!f.el) return;
         formData.append(f.key, f.el.value.trim());
       });
-      if (researchImageInput && researchImageInput.files[0]) {
-        formData.append('image', researchImageInput.files[0]);
-      }
+      researchPhotos.appendTo(formData);
 
       const url = selectedResearchId ? `${API_BASE}/api/research/${selectedResearchId}` : `${API_BASE}/api/research`;
       const method = selectedResearchId ? 'PUT' : 'POST';
@@ -1682,7 +2026,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const tags = Array.isArray(edu.tags) && edu.tags.length
           ? `<div class="timeline-tags">${edu.tags.map(t => `<span class="mini-tag">${escapeHtml(t)}</span>`).join('')}</div>`
           : '';
-        const thumb = edu.image ? `<img class="entry-thumb" src="${resolveImageUrl(edu.image)}" alt="${escapeHtml(edu.title)}" />` : '';
+        const eduPhotos = itemImages(edu);
+        const thumb = eduPhotos.length ? photoCover(`education:${edu.id}`, eduPhotos, edu.title, 'thumb', 'entry-thumb') : '';
 
         return `
           <div class="timeline-item reveal active">
@@ -1721,7 +2066,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const tags = Array.isArray(exp.tags) && exp.tags.length
           ? `<div class="activity-highlights">${exp.tags.map(t => `<span class="mini-tag">${escapeHtml(t)}</span>`).join('')}</div>`
           : '';
-        const thumb = exp.image ? `<img class="entry-thumb" src="${resolveImageUrl(exp.image)}" alt="${escapeHtml(exp.title)}" />` : '';
+        const expPhotos = itemImages(exp);
+        const thumb = expPhotos.length ? photoCover(`experience:${exp.id}`, expPhotos, exp.title, 'thumb', 'entry-thumb') : '';
 
         return `
           <div class="activity-card reveal active">
@@ -1753,8 +2099,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     grid.innerHTML = items.map((ev, i) => {
       const bannerClass = `project-banner-${(i % 4) + 1}`;
-      const bannerMedia = ev.image
-        ? `<img class="project-banner-img" src="${resolveImageUrl(ev.image)}" alt="${escapeHtml(ev.title)}" />`
+      const evPhotos = itemImages(ev);
+      const bannerMedia = evPhotos.length
+        ? photoCover(`events:${ev.id}`, evPhotos, ev.title, 'fill', 'project-banner-img')
         : `<div class="banner-icon">${getEventIcon()}</div>`;
 
       const metaParts = [];
@@ -1798,7 +2145,8 @@ document.addEventListener('DOMContentLoaded', () => {
       grid.innerHTML = '<p class="admin-text">No certificates added yet.</p>';
     } else {
       grid.innerHTML = items.map(c => {
-        const thumb = c.image ? `<img class="cert-thumb" src="${resolveImageUrl(c.image)}" alt="${escapeHtml(c.title)}" />` : '';
+        const certPhotos = itemImages(c);
+        const thumb = certPhotos.length ? photoCover(`certificates:${c.id}`, certPhotos, c.title, 'block', 'cert-thumb') : '';
         return `
           <div class="certificate-card reveal active">
             <div class="cert-header">
@@ -1836,6 +2184,165 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     certificatesAdmin.renderList();
+  }
+
+  /* ==================== 15b. ACHIEVEMENTS, PUBLICATIONS, GALLERY & TESTIMONIALS ==================== */
+  // Each of these sections is hidden on the public site until it has content.
+
+  // Only allow normal web links in owner-entered URLs.
+  function safeUrl(url) {
+    const u = String(url || '').trim();
+    return /^(https?:\/\/|mailto:|#)/i.test(u) ? u : '';
+  }
+
+  const externalLinkIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+  const trophyIcon = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`;
+
+  function linkButton(url, label) {
+    const href = safeUrl(url);
+    if (!href) return '';
+    const external = /^https?:/i.test(href);
+    return `<div class="project-actions">
+      <a href="${escapeHtml(href)}" ${external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="btn btn-sm btn-primary">
+        ${externalLinkIcon}<span>${escapeHtml(label)}</span>
+      </a>
+    </div>`;
+  }
+
+  async function renderAchievements() {
+    const grid = document.getElementById('achievements-grid');
+    const items = await fetchAchievements();
+    setSectionVisible('achievements', items.length > 0);
+
+    if (grid) {
+      grid.innerHTML = items.map((a, i) => {
+        const photos = itemImages(a);
+        const media = photos.length
+          ? photoCover(`achievements:${a.id}`, photos, a.title, 'fill', 'project-banner-img')
+          : `<div class="banner-icon">${trophyIcon}</div>`;
+        const meta = [a.issuer, a.date].filter(Boolean).map(m => `<span>${escapeHtml(m)}</span>`).join('');
+        return `
+          <article class="project-card achievement-card reveal active">
+            <div class="project-banner project-banner-${(i % 4) + 1}">
+              <div class="project-badge">${escapeHtml(ACHIEVEMENT_TYPES[a.category] || 'Achievement')}</div>
+              ${media}
+            </div>
+            <div class="project-body">
+              <h3 class="project-title">${escapeHtml(a.title)}</h3>
+              ${meta ? `<div class="event-meta">${meta}</div>` : ''}
+              ${a.description ? `<p class="project-description">${escapeHtml(a.description)}</p>` : ''}
+              ${linkButton(a.link, 'View')}
+            </div>
+          </article>`;
+      }).join('');
+    }
+
+    achievementsAdmin.renderList();
+  }
+
+  async function renderPublications() {
+    const list = document.getElementById('publications-list');
+    const items = await fetchPublications();
+    setSectionVisible('publications', items.length > 0);
+
+    if (list) {
+      list.innerHTML = items.map(p => {
+        const photos = itemImages(p);
+        const cover = photos.length
+          ? photoCover(`publications:${p.id}`, photos, p.title, 'pub', 'publication-cover')
+          : '';
+        const meta = [p.publisher, p.date].filter(Boolean).map(m => `<span>${escapeHtml(m)}</span>`).join('');
+        const tags = Array.isArray(p.tags) && p.tags.length
+          ? `<div class="timeline-tags">${p.tags.map(t => `<span class="mini-tag">${escapeHtml(t)}</span>`).join('')}</div>`
+          : '';
+        return `
+          <article class="publication-card reveal active ${cover ? 'has-cover' : ''}">
+            ${cover}
+            <div class="publication-body">
+              <span class="publication-type">${escapeHtml(PUBLICATION_TYPES[p.type] || 'Publication')}</span>
+              <h3 class="publication-title">${escapeHtml(p.title)}</h3>
+              ${meta ? `<div class="event-meta">${meta}</div>` : ''}
+              ${p.description ? `<p class="publication-summary">${escapeHtml(p.description)}</p>` : ''}
+              ${tags}
+              ${linkButton(p.link, p.type === 'paper' || p.type === 'thesis' ? 'Read Paper' : 'Read')}
+            </div>
+          </article>`;
+      }).join('');
+    }
+
+    publicationsAdmin.renderList();
+  }
+
+  async function renderGallery() {
+    const grid = document.getElementById('gallery-grid');
+    const items = await fetchGallery();
+    // Albums without photos are kept for the owner but not shown publicly.
+    const albums = items.filter(g => itemImages(g).length > 0);
+    setSectionVisible('gallery', albums.length > 0);
+
+    if (grid) {
+      grid.innerHTML = albums.map(g => {
+        const photos = itemImages(g);
+        registerPhotos(`gallery:${g.id}`, photos, g.description ? `${g.title} — ${g.description}` : g.title);
+        return `
+          <button type="button" class="gallery-album reveal active" data-photos="${escapeHtml(`gallery:${g.id}`)}" data-index="0"
+            aria-label="Open album ${escapeHtml(g.title)} (${photos.length} photo${photos.length === 1 ? '' : 's'})">
+            <img class="gallery-album-img" src="${escapeHtml(resolveImageUrl(photos[0]))}" alt="" loading="lazy" />
+            <span class="gallery-album-overlay">
+              <span class="gallery-album-title">${escapeHtml(g.title)}</span>
+              <span class="gallery-album-meta">${[formatDate(g.date), `${photos.length} photo${photos.length === 1 ? '' : 's'}`].filter(Boolean).map(escapeHtml).join(' • ')}</span>
+            </span>
+          </button>`;
+      }).join('');
+    }
+
+    galleryAdmin.renderList();
+  }
+
+  // "2026-11-21" (from a date picker) -> "21 Nov 2026". Anything else
+  // (e.g. older free-text dates like "October 2025") is shown unchanged.
+  function formatDate(value) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+    if (!m) return value || '';
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function initials(name) {
+    return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '?';
+  }
+
+  async function renderTestimonials() {
+    const grid = document.getElementById('testimonials-grid');
+    const items = await fetchTestimonials();
+    setSectionVisible('testimonials', items.length > 0);
+
+    if (grid) {
+      grid.innerHTML = items.map(t => {
+        const photos = itemImages(t);
+        const avatar = photos.length
+          ? photoCover(`testimonials:${t.id}`, photos, t.title, 'avatar', 'testimonial-avatar-img')
+          : `<span class="testimonial-avatar-initials" aria-hidden="true">${escapeHtml(initials(t.title))}</span>`;
+        const href = safeUrl(t.link);
+        const name = href
+          ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="testimonial-name">${escapeHtml(t.title)}</a>`
+          : `<span class="testimonial-name">${escapeHtml(t.title)}</span>`;
+        return `
+          <figure class="testimonial-card reveal active">
+            <svg class="testimonial-quote-icon" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.76-2.02-2-2H4c-1.25 0-2 .75-2 1.97V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .01-1 1.03V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.76-2.02-2-2h-4c-1.25 0-2 .75-2 1.97V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+            <blockquote class="testimonial-quote">${escapeHtml(t.quote || '')}</blockquote>
+            <figcaption class="testimonial-person">
+              <span class="testimonial-avatar">${avatar}</span>
+              <span class="testimonial-who">
+                ${name}
+                ${t.role ? `<span class="testimonial-role">${escapeHtml(t.role)}</span>` : ''}
+              </span>
+            </figcaption>
+          </figure>`;
+      }).join('');
+    }
+
+    testimonialsAdmin.renderList();
   }
 
   /* ==================== 16. PROFILE, ABOUT & CONTACT CUSTOMIZATION ==================== */
@@ -2114,6 +2621,10 @@ document.addEventListener('DOMContentLoaded', () => {
         experience: await fetchExperience(),
         certificates: await fetchCertificates(),
         events: await fetchEvents(),
+        achievements: await fetchAchievements(),
+        publications: await fetchPublications(),
+        gallery: await fetchGallery(),
+        testimonials: await fetchTestimonials(),
         messages: await fetchMessages()
       };
       const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportObj, null, 2));
@@ -2149,6 +2660,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderExperience();
   renderCertificates();
   renderEvents();
+  renderAchievements();
+  renderPublications();
+  renderGallery();
+  renderTestimonials();
 
   /* ==================== 20. DYNAMIC COPYRIGHT YEAR ==================== */
   const yearElement = document.getElementById('current-year');
@@ -2293,6 +2808,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* ==================== 24b. "MORE" NAV MENU ==================== */
+  // On desktop it's a dropdown (click, or hover via CSS); inside the mobile
+  // menu its links are simply listed inline.
+  const navMoreToggle = document.getElementById('nav-more-toggle');
+  const navMore = document.getElementById('nav-more');
+
+  function setNavMoreOpen(open) {
+    if (!navMore || !navMoreToggle) return;
+    navMore.classList.toggle('open', open);
+    navMoreToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  if (navMoreToggle && navMore) {
+    navMoreToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setNavMoreOpen(!navMore.classList.contains('open'));
+    });
+    navMore.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      setNavMoreOpen(false);
+      navMore.classList.add('suppress-hover');
+      a.blur();
+    }));
+    navMore.addEventListener('mouseleave', () => navMore.classList.remove('suppress-hover'));
+    // Keyboard: close when focus moves out of the menu
+    navMore.addEventListener('focusout', (e) => {
+      if (!navMore.contains(e.relatedTarget)) setNavMoreOpen(false);
+    });
+    document.addEventListener('click', (e) => {
+      if (!navMore.contains(e.target)) setNavMoreOpen(false);
+    });
+  }
+
   /* ==================== 25. ACTIVE SECTION HIGHLIGHTING ==================== */
   const sections = document.querySelectorAll('section[id]');
 
@@ -2312,6 +2859,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+
+    // Highlight "More" while one of its sections is on screen
+    if (navMoreToggle && navMore) {
+      navMoreToggle.classList.toggle('active', !!navMore.querySelector('.nav-link.active'));
+    }
   }
 
   window.addEventListener('scroll', highlightActiveNavLink, { passive: true });
@@ -2376,7 +2928,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.addEventListener('keydown', (e) => {
+    // The photo viewer sits on top of everything: it gets the keys first,
+    // and Escape closes only it.
+    if (isLightboxOpen()) {
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowLeft') showLightboxPhoto(lightboxIndex - 1);
+      else if (e.key === 'ArrowRight') showLightboxPhoto(lightboxIndex + 1);
+      return;
+    }
     if (e.key === 'Escape') {
+      if (navMoreToggle && navMoreToggle.getAttribute('aria-expanded') === 'true') setNavMoreOpen(false);
       if (certModal && certModal.classList.contains('open')) closeCertModal();
       if (researchWorkspace && researchWorkspace.classList.contains('open')) closeResearchWorkspace();
       if (adminModal && adminModal.classList.contains('open')) closeAdminModal();

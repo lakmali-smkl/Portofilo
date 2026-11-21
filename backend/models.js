@@ -22,6 +22,8 @@ const ImageSchema = new Schema(
     id: { type: String, required: true, unique: true },
     data: Buffer,
     contentType: String,
+    // true for images belonging to owner-only content (research projects)
+    private: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
   },
   { versionKey: false }
