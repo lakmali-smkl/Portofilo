@@ -25,7 +25,23 @@ document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
   /* ==================== 1. BACKEND API CONFIGURATION ==================== */
-  const API_BASE = 'http://localhost:3001';
+  // Where the backend API lives:
+  //  - Normally the backend serves this page too (locally at
+  //    http://localhost:3001, or on your hosting domain), so the API is on
+  //    the same address as the page.
+  //  - When the page is opened another way while developing (double-clicked
+  //    file, `python -m http.server 8000`, VS Code Live Server), it talks to
+  //    the local backend on port 3001.
+  //  - To use a backend on a different domain, set
+  //    window.PORTFOLIO_API_BASE = 'https://api.example.com' before this script.
+  const API_BASE = (() => {
+    if (window.PORTFOLIO_API_BASE) return String(window.PORTFOLIO_API_BASE).replace(/\/+$/, '');
+    // The backend adds <meta name="portfolio-api" content="same-origin"> to
+    // the page when it serves it.
+    const servedByBackend = document.querySelector('meta[name="portfolio-api"][content="same-origin"]');
+    if (servedByBackend && /^https?:$/.test(window.location.protocol)) return window.location.origin;
+    return 'http://localhost:3001';
+  })();
   const API_PROJECTS = `${API_BASE}/api/projects`;
   const API_PROFILE = `${API_BASE}/api/profile`;
   const TOKEN_KEY = 'kasunika_admin_token';
@@ -951,7 +967,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${photos ? adminThumb(item) : ''}
             <div class="admin-proj-info">
               <span class="admin-proj-name">${escapeHtml(item.title)}</span>
-              <span class="admin-proj-meta">${escapeHtml(cfg.buildMeta(item) + (photos ? photoCountText(item) : ''))}</span>
+              <span class="admin-proj-meta">${escapeHtml(cfg.buildMeta(item) + (photos && !cfg.metaHasPhotoCount ? photoCountText(item) : ''))}</span>
             </div>
           </div>
           <div class="admin-proj-actions">
@@ -1241,6 +1257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmDeleteText: 'Delete this album and all of its photos?',
     photoPrefix: 'gal',
     requirePhotos: true,
+    metaHasPhotoCount: true, // buildMeta below already says "N photos"
     fields: [
       { key: 'title', el: document.getElementById('gal-title'), required: true },
       { key: 'date', el: document.getElementById('gal-date') },

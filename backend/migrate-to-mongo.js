@@ -8,7 +8,7 @@
  * Run once:   node migrate-to-mongo.js
  * Safe to re-run — it skips any collection that already has data in Mongo.
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const fs = require('fs');
 const path = require('path');

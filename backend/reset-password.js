@@ -7,7 +7,7 @@
  * Restart the backend afterwards if it's currently running (it loads the
  * password once at startup), then log in on the site with the new one.
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const bcrypt = require('bcryptjs');
 const { connectDB, mongoose } = require('./db');
 const { Auth } = require('./models');

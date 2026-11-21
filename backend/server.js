@@ -12,14 +12,19 @@
  *   - GET                 /api/images/:id   (serve uploaded images)
  *   - Everything (content + images) is persisted in MongoDB Atlas — no
  *     local files, so it survives restarts and works from any machine.
- *   - CORS enabled for frontend at http://localhost:8000
+ *   - Also serves the website itself (index.html, script.js, style.css,
+ *     images/, assets/), so the whole portfolio deploys as ONE service.
+ *   - CORS: local dev origins + anything listed in ALLOWED_ORIGINS
  * ==========================================================================
  *   To run:   node server.js
- *   API runs: http://localhost:3001
+ *   Open:     http://localhost:3001   (site + API on the same address)
+ *   Hosting:  the port comes from process.env.PORT when the host sets it
  * ==========================================================================
  */
 
-require('dotenv').config();
+const path = require('path');
+// Load backend/.env no matter which folder the server is started from.
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
@@ -34,17 +39,57 @@ const { connectDB } = require('./db');
 const { resourceModel, Image, Profile, Auth } = require('./models');
 
 const app = express();
-const PORT = 3001;
+// Hosting services (Render, Railway, ...) choose the port and pass it in PORT.
+const PORT = parseInt(process.env.PORT, 10) || 3001;
+
+// Behind a hosting provider's proxy, trust its X-Forwarded-For header so
+// req.ip is the visitor's real address (needed for the login limiter).
+if (process.env.TRUST_PROXY !== 'false' && (process.env.TRUST_PROXY || process.env.RENDER || process.env.NODE_ENV === 'production')) {
+  app.set('trust proxy', 1);
+}
 
 // ==================== MIDDLEWARE ====================
+// When the site is served by this server (the normal setup, locally and
+// when deployed) requests are same-origin and need no CORS at all. These
+// origins are only for opening the site some other way while developing
+// (file://, `python -m http.server 8000`, VS Code Live Server on 5500),
+// plus any extra domains listed in ALLOWED_ORIGINS (comma separated).
+const DEV_ORIGINS = [
+  'http://localhost:8000', 'http://127.0.0.1:8000',
+  'http://localhost:5500', 'http://127.0.0.1:5500',
+  'null' // pages opened straight from disk (file://)
+];
+const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+  .split(',').map(s => s.trim().replace(/\/+$/, '')).filter(Boolean);
+
 app.use(cors({
-  origin: ['http://localhost:8000', 'http://127.0.0.1:8000', 'null'],
+  origin: [...DEV_ORIGINS, ...EXTRA_ORIGINS],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ==================== WEBSITE (static frontend) ====================
+// Only the site's own files are served — never the backend folder (which
+// holds .env and the server code).
+const SITE_ROOT = path.join(__dirname, '..');
+const sendSiteFile = (file) => (req, res) => res.sendFile(path.join(SITE_ROOT, file));
+// index.html gets a marker telling script.js "the API is on this same
+// address" (when the page is opened any other way, it uses localhost:3001).
+const fs = require('fs');
+app.get(['/', '/index.html'], (req, res, next) => {
+  fs.readFile(path.join(SITE_ROOT, 'index.html'), 'utf8', (err, html) => {
+    if (err) return next(err);
+    res.type('html').set('Cache-Control', 'no-cache')
+      .send(html.replace(/<head>/i, '<head>\n  <meta name="portfolio-api" content="same-origin" />'));
+  });
+});
+app.get('/script.js', sendSiteFile('script.js'));
+app.get('/style.css', sendSiteFile('style.css'));
+app.use('/images', express.static(path.join(SITE_ROOT, 'images'), { fallthrough: true }));
+app.use('/assets', express.static(path.join(SITE_ROOT, 'assets'), { fallthrough: true }));
 
 // ==================== FILE UPLOAD CONFIG (MULTER) ====================
 // Files are held in memory just long enough to be written into MongoDB as
@@ -242,11 +287,64 @@ function requireAuth(req, res, next) {
   }
 }
 
-app.post('/api/auth/login', (req, res) => {
-  const { password } = req.body;
-  if (!password || !bcrypt.compareSync(password, AUTH.passwordHash)) {
-    return res.status(401).json({ success: false, message: 'Incorrect password.' });
+// ---- Login attempt limiter ----
+// After LOGIN_MAX_ATTEMPTS wrong passwords from one address within the
+// window, that address is locked out for LOGIN_LOCK_MINUTES. A correct
+// login clears its count. Kept in memory: a restart clears all lockouts.
+const LOGIN_MAX_ATTEMPTS = parseInt(process.env.LOGIN_MAX_ATTEMPTS, 10) || 5;
+const LOGIN_LOCK_MS = (parseFloat(process.env.LOGIN_LOCK_MINUTES) || 15) * 60 * 1000;
+const loginFailures = new Map(); // ip -> { count, firstAt, lockedUntil }
+
+function loginLockRemainingMs(ip) {
+  const entry = loginFailures.get(ip);
+  if (!entry) return 0;
+  const now = Date.now();
+  if (entry.lockedUntil && entry.lockedUntil > now) return entry.lockedUntil - now;
+  if (entry.lockedUntil || now - entry.firstAt > LOGIN_LOCK_MS) loginFailures.delete(ip);
+  return 0;
+}
+
+function recordLoginFailure(ip) {
+  const now = Date.now();
+  const entry = loginFailures.get(ip) || { count: 0, firstAt: now, lockedUntil: 0 };
+  entry.count += 1;
+  if (entry.count >= LOGIN_MAX_ATTEMPTS) entry.lockedUntil = now + LOGIN_LOCK_MS;
+  loginFailures.set(ip, entry);
+  // Stop the map growing forever on a long-running server
+  if (loginFailures.size > 10000) {
+    for (const [key, e] of loginFailures) {
+      if ((!e.lockedUntil || e.lockedUntil < now) && now - e.firstAt > LOGIN_LOCK_MS) loginFailures.delete(key);
+    }
   }
+  return entry;
+}
+
+function tooManyAttempts(res, remainingMs) {
+  const minutes = Math.ceil(remainingMs / 60000);
+  res.set('Retry-After', String(Math.ceil(remainingMs / 1000)));
+  return res.status(429).json({
+    success: false,
+    message: `Too many wrong passwords. Login is locked for ${minutes} more minute${minutes === 1 ? '' : 's'}.`
+  });
+}
+
+app.post('/api/auth/login', (req, res) => {
+  const ip = req.ip;
+  const locked = loginLockRemainingMs(ip);
+  if (locked) return tooManyAttempts(res, locked);
+
+  const { password } = req.body;
+  if (!password || !bcrypt.compareSync(String(password), AUTH.passwordHash)) {
+    const entry = recordLoginFailure(ip);
+    if (entry.lockedUntil) return tooManyAttempts(res, entry.lockedUntil - Date.now());
+    const left = LOGIN_MAX_ATTEMPTS - entry.count;
+    return res.status(401).json({
+      success: false,
+      message: `Incorrect password. ${left} attempt${left === 1 ? '' : 's'} left before login is locked for a while.`
+    });
+  }
+
+  loginFailures.delete(ip);
   const token = jwt.sign({ role: 'owner' }, AUTH.jwtSecret, { expiresIn: '7d' });
   res.json({ success: true, token });
 });
@@ -1074,6 +1172,7 @@ async function main() {
     console.log('');
     console.log('==============================================');
     console.log(`  🚀 Kasunika Portfolio API is running!`);
+    console.log(`  🌐 Website:    http://localhost:${PORT}   <- open this`);
     console.log(`  📡 Backend URL: http://localhost:${PORT}`);
     console.log(`  📁 Projects:   http://localhost:${PORT}/api/projects`);
     console.log(`  👤 Profile:    http://localhost:${PORT}/api/profile`);

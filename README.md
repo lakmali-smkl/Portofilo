@@ -63,10 +63,12 @@ Password: aB3xY9kLm2Qz
 ```
 Copy it now — it's never shown again. Use it to log in on the site (see **Owner Login**, below), then change it to something memorable from **Manage Projects → Profile & Links → Change Password**.
 
-### 3. Serve the frontend
-Pick whichever is easiest:
+### 3. Open the website
+**Simplest: let the backend serve it.** With `node server.js` running, just open **http://localhost:3001** — the site and the API come from the same server, exactly like when it's deployed.
 
-**Direct Browser Open (Simplest)**
+Other ways still work while developing (they talk to the backend on port 3001):
+
+**Direct Browser Open**
 1. Double-click on `index.html` in your file explorer, **or**
 2. Right-click `index.html` &rarr; **Open with** &rarr; Chrome / Edge / Firefox / Safari.
 
@@ -204,10 +206,34 @@ The tests run against a temporary in-memory MongoDB, so they **never touch your 
 
 ---
 
-## ⚠️ A note on deploying this publicly
+## 🌍 Deploying it online (Render — free)
 
-This project is built for **local personal use** (running on your own machine). If you ever host it somewhere public:
-- Serve the backend over **HTTPS** — the login password and session token are sent in plain HTTP otherwise.
-- The login has no rate-limiting/lockout; add one before exposing it to the internet.
-- Update the CORS origins in `backend/server.js` to your real domain instead of `localhost`.
-- In MongoDB Atlas, narrow the Network Access list from "Allow Access from Anywhere" down to your server's actual IP once you know it.
+The backend serves the website too, so the whole portfolio is **one web service** plus your existing MongoDB Atlas database. These steps use [Render](https://render.com) (free plan); any Node.js host works the same way.
+
+**Before you deploy**
+1. Replace the placeholders in `index.html` — search for `[Your-` (GitHub, LinkedIn, email links).
+2. Put your CV at `assets/Kasunika_CV.pdf` (exact name) so the Download CV button works.
+3. Commit and push the project to a GitHub repository. `backend/.env` is git-ignored and must **not** be committed — its values go into Render's settings instead.
+
+**Create the service**
+1. On Render: **New → Web Service** → connect your GitHub repo.
+2. Settings:
+   - **Root Directory:** leave empty (the project root)
+   - **Runtime:** Node
+   - **Build Command:** `npm install --prefix backend`
+   - **Start Command:** `node backend/server.js`
+   - **Instance type:** Free
+3. **Environment → Add Environment Variable**, copying the values from your local `backend/.env`:
+   - `MONGODB_URI` (required)
+   - `SMTP_USER`, `SMTP_PASS`, `SMTP_TO` (optional, for contact-form emails)
+4. **Create Web Service.** After the build, your site is live at `https://<your-service>.onrender.com`, with HTTPS included.
+5. Log in with your **existing** owner password — it's stored in Atlas, so it's the same one you use locally. (If the database is brand new, the first-run password is printed in Render's **Logs** tab.)
+
+**MongoDB Atlas network access:** Render's free plan has no fixed IP address, so Atlas must allow connections from anywhere (`0.0.0.0/0`, under **Network Access**). The database is still protected by your username and password, so use a long, random database password.
+
+**Good to know**
+- Free Render services go to sleep after ~15 minutes without visitors; the first visit after that takes 30–60 seconds to wake up. A paid instance avoids this.
+- **Login protection:** after 5 wrong passwords, login is locked for 15 minutes for that visitor (adjustable with `LOGIN_MAX_ATTEMPTS` / `LOGIN_LOCK_MINUTES`). Restarting the server clears lockouts.
+- **Your own domain:** add it under Render → Settings → Custom Domains. Nothing in the code needs to change.
+- **Hosting the frontend separately** (e.g. GitHub Pages) instead: set `window.PORTFOLIO_API_BASE = 'https://<your-backend>'` in a `<script>` before `script.js`, and add the frontend's address to `ALLOWED_ORIGINS` on the backend.
+- Everything you configure is listed in `backend/.env.example`.

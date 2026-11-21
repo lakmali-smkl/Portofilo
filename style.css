@@ -815,7 +815,7 @@ ul {
 /* ==================== SKILLS SECTION ==================== */
 .skills-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
   gap: 1.75rem;
 }
 
@@ -1111,7 +1111,7 @@ ul {
 
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 2rem;
 }
 
@@ -1255,7 +1255,7 @@ ul {
 /* ==================== EXPERIENCE & ACTIVITIES SECTION ==================== */
 .activity-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
   gap: 1.75rem;
 }
 
@@ -1328,7 +1328,7 @@ ul {
 /* ==================== CERTIFICATES SECTION ==================== */
 .certificates-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 1.75rem;
 }
 
@@ -2397,6 +2397,34 @@ a.contact-detail-val:hover {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.admin-project-item {
+  gap: 0.75rem;
+}
+
+.admin-proj-name,
+.admin-proj-meta {
+  overflow-wrap: anywhere;
+}
+
+/* Small phones: put Edit / Delete on their own row under the details, so
+   long titles and the buttons never squash or overlap each other. */
+@media (max-width: 600px) {
+  .admin-project-item {
+    flex-wrap: wrap;
+  }
+  .admin-proj-left {
+    flex: 1 1 100%;
+  }
+  .admin-proj-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+  .admin-proj-actions .btn-icon-action {
+    padding: 0.55rem 0.9rem; /* easier to tap */
+  }
 }
 
 .btn-icon-action {
@@ -2932,7 +2960,7 @@ a.contact-detail-val:hover {
 /* -------- Progress tab: donut charts + status breakdown bars -------- */
 .research-progress-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 1.25rem;
 }
 
@@ -3169,7 +3197,7 @@ a.contact-detail-val:hover {
 
 .photo-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(92px, 100%), 1fr));
   gap: 0.6rem;
 }
 
@@ -3253,7 +3281,9 @@ a.contact-detail-val:hover {
   position: fixed;
   inset: 0;
   z-index: 3000;
-  background: rgba(3, 6, 12, 0.94);
+  background: rgba(3, 6, 12, 0.97);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: grid;
   grid-template-columns: auto 1fr auto;
   grid-template-rows: 1fr auto;
@@ -3471,7 +3501,96 @@ a.contact-detail-val:hover {
   background: rgba(56, 189, 248, 0.1);
 }
 
-@media (max-width: 768px) {
+/* ---------- Header on mid-size screens ----------
+   The full menu bar (logo + 10 links + "Let's Connect") needs ~1155px.
+   Between 1081px and 1240px the links sit closer together so it still fits;
+   at 1080px and below (small laptops, tablets, narrow windows) the
+   slide-out menu is used, exactly like on phones. */
+@media (max-width: 1240px) {
+  .nav-list {
+    gap: 1.1rem;
+  }
+}
+
+@media (max-width: 1080px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav-menu {
+    position: fixed;
+    top: var(--header-height);
+    right: -100%;
+    width: 80%;
+    max-width: 340px;
+    height: calc(100vh - var(--header-height));
+    background: rgba(11, 15, 23, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-left: 1px solid var(--border-color);
+    padding: 2.5rem 2rem;
+    transition: right var(--transition-normal);
+    overflow-y: auto;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+  }
+
+  .nav-menu.open {
+    right: 0;
+  }
+
+  .nav-list {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .nav-link {
+    font-size: 1.1rem;
+  }
+}
+
+/* Very narrow phones (e.g. a folded Galaxy Fold, 280px) */
+@media (max-width: 360px) {
+  .nav-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .logo {
+    font-size: 1.05rem;
+  }
+}
+
+/* Phones & tablets: 16px text in form fields stops iPhones/iPads from
+   zooming the page in whenever a field is tapped. (Selectors include the
+   .form-input class so they beat its 0.95rem.) */
+@media (max-width: 1080px), (pointer: coarse) {
+  input,
+  select,
+  textarea,
+  input.form-input,
+  select.form-input,
+  textarea.form-input {
+    font-size: 16px;
+  }
+}
+
+/* Let grid columns shrink below their longest word/link on narrow screens */
+.contact-grid > * {
+  min-width: 0;
+}
+.contact-info-card,
+.contact-form-card {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 360px) {
+  .contact-info-card,
+  .contact-form-card {
+    padding: 1.5rem 1.1rem;
+  }
+}
+
+@media (max-width: 1080px) {
   /* Inside the slide-out mobile menu, list the extra links inline */
   .nav-dropdown-toggle {
     display: none;
@@ -3583,7 +3702,7 @@ a.contact-detail-val:hover {
 /* ---------- Gallery ---------- */
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
   gap: 1.25rem;
 }
 
@@ -3645,7 +3764,7 @@ a.contact-detail-val:hover {
 /* ---------- Testimonials ---------- */
 .testimonials-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 1.5rem;
 }
 
