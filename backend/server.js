@@ -383,7 +383,7 @@ async function seedDefaultProjects() {
       category: 'database',
       description: 'A relational database solution with optimized schema, normalized tables, complex queries, and transaction management.',
       tech: ['SQL', 'MariaDB / MySQL', 'ER Modeling', 'Schema Design'],
-      github: 'https://github.com/[Your-GitHub]',
+      github: 'https://github.com/lakmali-smkl',
       demo: '#contact',
       image: null,
       createdAt: new Date().toISOString()
@@ -394,7 +394,7 @@ async function seedDefaultProjects() {
       category: 'programming',
       description: 'An application to streamline student record administration, course registrations, and grade tracking.',
       tech: ['Java / Python', 'OOP', 'SQL Database', 'CRUD Operations'],
-      github: 'https://github.com/[Your-GitHub]',
+      github: 'https://github.com/lakmali-smkl',
       demo: '#contact',
       image: null,
       createdAt: new Date().toISOString()
@@ -405,7 +405,7 @@ async function seedDefaultProjects() {
       category: 'web',
       description: 'A modern, responsive portfolio website with HTML5, CSS3, and Vanilla JavaScript.',
       tech: ['HTML5', 'CSS3', 'Vanilla JavaScript', 'Responsive Design'],
-      github: 'https://github.com/[Your-GitHub]',
+      github: 'https://github.com/lakmali-smkl',
       demo: '#home',
       image: null,
       createdAt: new Date().toISOString()
@@ -421,11 +421,11 @@ async function seedDefaultProfile() {
   await Profile.create({
     name: 'Kasunika',
     degree: "Bachelor's Degree, University of Jaffna",
-    email: '',
+    email: 'smkl.lakmali@gmail.com',
     phone: '',
     location: 'University of Jaffna, Sri Lanka',
-    linkedin: '',
-    github: '',
+    linkedin: 'https://www.linkedin.com/in/kasunika-lakmali-27b5952a3',
+    github: 'https://github.com/lakmali-smkl',
     bio: 'A passionate university student driven by problem solving, software development, databases, and continuous learning. Focused on building impactful solutions and collaborating through student initiatives.',
     about: 'I am a university student at the University of Jaffna with a deep enthusiasm for technology, programming, database management, and modern software development.\n\nMy academic journey is anchored in building a strong foundation in core computer science principles, database design, and web technologies. I believe in continuous learning, constantly exploring new tools and methodologies to solve practical problems effectively.\n\nBeyond academics, I am actively engaged in student activities, volunteering initiatives, and IEEE-related programs. These experiences have enriched my teamwork, communication, leadership, and collaborative problem-solving capabilities.',
     photo: null
@@ -655,7 +655,7 @@ app.post('/api/projects', requireAuth, uploadPhotos, async (req, res) => {
       category: category.trim(),
       description: description.trim(),
       tech: techArray,
-      github: github ? github.trim() : 'https://github.com/[Your-GitHub]',
+      github: github ? github.trim() : 'https://github.com/lakmali-smkl',
       demo: demo ? demo.trim() : '#contact',
       images,
       image: images[0] || null,

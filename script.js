@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
       notice: '[Database Project]',
       description: 'A relational database solution designed with optimized schema structures, normalized tables, complex queries, and transaction management to store and retrieve data reliably.',
       tech: ['SQL', 'MariaDB / MySQL', 'ER Modeling', 'Schema Design'],
-      github: 'https://github.com/[Your-GitHub]',
+      github: 'https://github.com/lakmali-smkl',
       demo: '#contact'
     },
     {
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
       notice: '[Programming Project]',
       description: 'An application built to streamline student record administration, course registrations, and grade tracking with a structured data architecture and intuitive interface.',
       tech: ['Java / Python', 'OOP', 'SQL Database', 'CRUD Operations'],
-      github: 'https://github.com/[Your-GitHub]',
+      github: 'https://github.com/lakmali-smkl',
       demo: '#contact'
     },
     {
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
       notice: '[Web Project]',
       description: 'A modern, responsive personal portfolio website engineered with clean HTML5, custom CSS3, and vanilla JavaScript featuring dynamic interactions and smooth animations.',
       tech: ['HTML5', 'CSS3', 'Vanilla JavaScript', 'Responsive Design'],
-      github: 'https://github.com/[Your-GitHub]',
+      github: 'https://github.com/lakmali-smkl',
       demo: '#home'
     },
     {
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
       notice: '[Web Project]',
       description: 'A dynamic client-side web application implementing asynchronous data handling, responsive user interface components, and state management logic.',
       tech: ['JavaScript ES6', 'REST APIs', 'CSS Flexbox/Grid', 'DOM Manipulation'],
-      github: 'https://github.com/[Your-GitHub]',
+      github: 'https://github.com/lakmali-smkl',
       demo: '#contact'
     }
   ];
@@ -888,7 +888,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const category = projCategory.value;
       const desc = projDesc.value.trim();
       const tech = projTech.value.split(',').map(t => t.trim()).filter(Boolean);
-      const github = projGithub.value.trim() || 'https://github.com/[Your-GitHub]';
+      const github = projGithub.value.trim() || 'https://github.com/lakmali-smkl';
       const demo = projDemo.value.trim() || '#contact';
 
       if (!title || !category || !desc || tech.length === 0) {

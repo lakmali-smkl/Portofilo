@@ -50,7 +50,7 @@ describe('projects CRUD', () => {
     assert.equal(p.title, 'My App');
     assert.equal(p.description, 'A thing');
     assert.deepEqual(p.tech, ['Node', 'Express', 'MongoDB']);
-    assert.equal(p.github, 'https://github.com/[Your-GitHub]');
+    assert.equal(p.github, 'https://github.com/lakmali-smkl');
     assert.equal(p.demo, '#contact');
     assert.equal(p.image, null);
 
