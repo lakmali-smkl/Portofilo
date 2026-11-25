@@ -3884,6 +3884,70 @@ a.testimonial-name:hover {
   }
 }
 
+/* ---------- "See more" for long descriptions ---------- */
+/* The wrapper takes over the description's "fill the card" growth, so
+   buttons/tags below stay aligned at the bottom of each card. */
+.clamp-wrap {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.clamp-text {
+  --clamp-lines: 4;
+  /* Natural height (some originals use flex: 1, which would shrink a
+     clamped element to 0px inside the wrapper) */
+  flex: 0 0 auto !important;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--clamp-lines);
+  line-clamp: var(--clamp-lines);
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Cards in grids show fewer lines */
+#projects-grid .clamp-text,
+#events-grid .clamp-text,
+#achievements-grid .clamp-text {
+  --clamp-lines: 3;
+}
+
+.clamp-text.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+  overflow: visible;
+}
+
+.see-more-btn {
+  margin: 0.15rem 0 0.75rem;
+  padding: 0.2rem 0;
+  border: 0;
+  background: none;
+  color: var(--accent-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.see-more-btn[hidden] {
+  display: none;
+}
+
+.see-more-btn:hover {
+  text-decoration: underline;
+}
+
+.see-more-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gallery-album,
   .gallery-album-img,

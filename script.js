@@ -2667,6 +2667,97 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* ==================== 18a. "SEE MORE" FOR LONG DESCRIPTIONS ==================== */
+  // Long descriptions on the public cards show only their first few lines
+  // (set in CSS) with a "See more" / "See less" toggle. The button only
+  // appears when the text really is cut off, and re-checks itself whenever
+  // the card changes size (window resize, a section becoming visible, ...).
+  const CLAMP_SELECTOR = [
+    '#projects-grid .project-description',
+    '#events-grid .project-description',
+    '#achievements-grid .project-description',
+    '.timeline-description',
+    '.activity-text',
+    '.cert-desc',
+    '.publication-summary',
+    '.testimonial-quote'
+  ].join(', ');
+  let clampSeq = 0;
+
+  function updateSeeMore(el) {
+    const btn = el.parentElement && el.parentElement.querySelector(':scope > .see-more-btn');
+    if (!btn) return;
+    if (el.classList.contains('expanded')) { btn.hidden = false; return; }
+    // Not laid out yet (hidden section / filtered-out card): decide later.
+    if (!el.clientHeight) { btn.hidden = true; return; }
+    btn.hidden = el.scrollHeight <= el.clientHeight + 1;
+  }
+
+  const clampObserver = 'ResizeObserver' in window
+    ? new ResizeObserver(entries => entries.forEach(e => updateSeeMore(e.target)))
+    : null;
+
+  function applySeeMore() {
+    document.querySelectorAll(CLAMP_SELECTOR).forEach(el => {
+      if (el.dataset.clampReady) return;
+      if (!el.textContent.trim()) return;
+      el.dataset.clampReady = '1';
+      el.classList.add('clamp-text');
+      if (!el.id) el.id = `clamp-text-${++clampSeq}`;
+
+      // Wrapper takes over any "fill the card" growth so the toggle sits
+      // right under the text, not at the bottom of an empty gap.
+      const wrap = document.createElement('div');
+      wrap.className = 'clamp-wrap';
+      el.parentNode.insertBefore(wrap, el);
+      wrap.appendChild(el);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'see-more-btn';
+      btn.textContent = 'See more';
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-controls', el.id);
+      btn.hidden = true;
+      wrap.appendChild(btn);
+
+      if (clampObserver) clampObserver.observe(el);
+      updateSeeMore(el);
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.see-more-btn');
+    if (!btn) return;
+    const el = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!el) return;
+    const expanded = el.classList.toggle('expanded');
+    btn.textContent = expanded ? 'See less' : 'See more';
+    btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    if (!expanded) updateSeeMore(el);
+  });
+
+  // Cards are (re)rendered by many functions; catch them all in one place.
+  if ('MutationObserver' in window) {
+    let pending = false;
+    new MutationObserver(() => {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => { pending = false; applySeeMore(); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  // Text can re-wrap without the clamped box changing size (e.g. the web
+  // font finishes loading and a 3-line text becomes 4 lines). So also
+  // re-check everything when fonts/the page finish loading and on resize.
+  const recheckAllSeeMore = () => document.querySelectorAll('.clamp-text').forEach(updateSeeMore);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(recheckAllSeeMore);
+  window.addEventListener('load', recheckAllSeeMore);
+  let seeMoreResizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(seeMoreResizeTimer);
+    seeMoreResizeTimer = setTimeout(recheckAllSeeMore, 150);
+  });
+
   /* ==================== 18b. CV AVAILABILITY ==================== */
   // The hero "Download CV" button and the CV section start hidden and are
   // shown only once assets/Kasunika_CV.pdf actually exists — so visitors
@@ -2676,10 +2767,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!cvElements.length) return;
     let available;
     try {
-      const res = await fetch('assets/Kasunika_CV.pdf', { method: 'HEAD', cache: 'no-cache' });
-      available = res.ok;
+      // Ask the backend (no 404 noise in the console when there's no CV)
+      const res = await fetch(`${API_BASE}/api/site-info`, { cache: 'no-cache' });
+      const json = await res.json();
+      available = !!json.cv;
     } catch (e) {
-      // Page opened straight from disk (file://) can't check — show it.
+      // Backend not reachable (e.g. page opened from disk with no server
+      // running) — show the CV links rather than hide a CV that may exist.
       available = window.location.protocol === 'file:';
     }
     cvElements.forEach(el => { el.hidden = !available; });
@@ -2687,6 +2781,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ==================== 19. INITIAL RENDER ==================== */
   showCvIfAvailable();
+  applySeeMore();
   updateAuthUI();
   renderProjects();
   applyStoredProfile();

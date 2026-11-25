@@ -90,6 +90,13 @@ app.get(['/', '/index.html'], (req, res, next) => {
 });
 app.get('/script.js', sendSiteFile('script.js'));
 app.get('/style.css', sendSiteFile('style.css'));
+// Small facts about the site for the frontend (avoids probing for files
+// and logging 404s in visitors' browser consoles).
+const CV_FILE = path.join(SITE_ROOT, 'assets', 'Kasunika_CV.pdf');
+app.get('/api/site-info', (req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.json({ success: true, cv: fs.existsSync(CV_FILE) });
+});
 app.use('/images', express.static(path.join(SITE_ROOT, 'images'), { fallthrough: true }));
 app.use('/assets', express.static(path.join(SITE_ROOT, 'assets'), { fallthrough: true }));
 

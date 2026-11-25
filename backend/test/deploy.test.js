@@ -54,12 +54,16 @@ describe('serves the website', () => {
     const existed = fs.existsSync(cv);
     if (!existed) {
       assert.equal((await request(app).head('/assets/Kasunika_CV.pdf')).status, 404);
+      assert.equal((await request(app).get('/api/site-info')).body.cv, false);
       fs.writeFileSync(cv, '%PDF-1.4 test');
     }
     try {
       const res = await request(app).head('/assets/Kasunika_CV.pdf');
       assert.equal(res.status, 200);
       assert.match(res.headers['content-type'], /pdf/);
+      const info = await request(app).get('/api/site-info');
+      assert.equal(info.status, 200);
+      assert.equal(info.body.cv, true);
     } finally {
       if (!existed) fs.unlinkSync(cv);
     }
