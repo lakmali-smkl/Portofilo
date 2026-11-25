@@ -218,11 +218,13 @@ The backend serves the website too, so the whole portfolio is **one web service*
 **Create the service**
 1. On Render: **New → Web Service** → connect your GitHub repo.
 2. Settings:
-   - **Root Directory:** leave empty (the project root)
-   - **Runtime:** Node
-   - **Build Command:** `npm install --prefix backend`
-   - **Start Command:** `node backend/server.js`
+   - **Root Directory:** leave **empty** (the project root, not `backend`)
+   - **Runtime / Language:** Node
+   - **Build Command:** `npm install --omit=dev --prefix backend` (plain `npm install` also works)
+   - **Start Command:** `node backend/server.js` (or `npm start`)
    - **Instance type:** Free
+
+   Shortcut: Render → **New → Blueprint** → pick the repo. It reads `render.yaml` and fills in all of the above; you only paste the environment values.
 3. **Environment → Add Environment Variable**, copying the values from your local `backend/.env`:
    - `MONGODB_URI` (required)
    - `SMTP_USER`, `SMTP_PASS`, `SMTP_TO` (optional, for contact-form emails)

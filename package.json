@@ -1,0 +1,14 @@
+{
+  "name": "kasunika-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kasunika's portfolio — the backend in /backend also serves the website, so the whole site deploys as one Node.js service.",
+  "scripts": {
+    "postinstall": "npm install --omit=dev --prefix backend",
+    "start": "node backend/server.js",
+    "test": "npm test --prefix backend"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

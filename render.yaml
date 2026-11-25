@@ -1,0 +1,24 @@
+# Render "Blueprint": Render reads this file to create/configure the service.
+# Secret values (MONGODB_URI, SMTP_*) are NOT stored here — Render asks for
+# them in its dashboard (sync: false).
+services:
+  - type: web
+    name: kasunika-portfolio
+    runtime: node
+    plan: free
+    # Installs only what the server needs (skips the test tools, which would
+    # download a ~780 MB MongoDB binary).
+    buildCommand: npm install --omit=dev --prefix backend
+    startCommand: node backend/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: MONGODB_URI
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_TO
+        sync: false
