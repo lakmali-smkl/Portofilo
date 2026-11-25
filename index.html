@@ -119,7 +119,8 @@
               <span>View My Projects</span>
               <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </a>
-            <a href="#cv" class="btn btn-secondary">
+            <!-- CV buttons/section stay hidden until script.js finds assets/Kasunika_CV.pdf -->
+            <a href="#cv" class="btn btn-secondary" data-cv-only hidden>
               <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Download CV</span>
             </a>
@@ -334,7 +335,6 @@
 
             <div class="project-body">
               <h3 class="project-title">Database Management System</h3>
-              <p class="project-placeholder-notice">[Editable Placeholder Project]</p>
               <p class="project-description">
                 A relational database solution designed with optimized schema structures, normalized tables, complex queries, and transaction management to store and retrieve data reliably.
               </p>
@@ -370,7 +370,6 @@
 
             <div class="project-body">
               <h3 class="project-title">Student Management System</h3>
-              <p class="project-placeholder-notice">[Editable Placeholder Project]</p>
               <p class="project-description">
                 An application built to streamline student record administration, course registrations, and grade tracking with a structured data architecture and intuitive interface.
               </p>
@@ -406,7 +405,6 @@
 
             <div class="project-body">
               <h3 class="project-title">Personal Portfolio Website</h3>
-              <p class="project-placeholder-notice">[Current Project]</p>
               <p class="project-description">
                 A modern, responsive personal portfolio website engineered with clean HTML5, custom CSS3, and vanilla JavaScript featuring dynamic interactions and smooth animations.
               </p>
@@ -442,7 +440,6 @@
 
             <div class="project-body">
               <h3 class="project-title">Interactive Web Application</h3>
-              <p class="project-placeholder-notice">[Editable Placeholder Project]</p>
               <p class="project-description">
                 A dynamic client-side web application implementing asynchronous data handling, responsive user interface components, and state management logic.
               </p>
@@ -578,7 +575,7 @@
     </section>
 
     <!-- ==================== CV SECTION ==================== -->
-    <section class="cv-section section" id="cv">
+    <section class="cv-section section" id="cv" data-cv-only hidden>
       <div class="container">
         <div class="cv-card reveal">
           <div class="cv-content">
@@ -607,10 +604,6 @@
             </a>
           </div>
 
-          <p class="cv-notice">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            Place your <code>Kasunika_CV.pdf</code> file into the <code>assets/</code> folder to make download &amp; view fully active.
-          </p>
         </div>
       </div>
     </section>

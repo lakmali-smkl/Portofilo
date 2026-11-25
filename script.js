@@ -573,7 +573,6 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="project-body">
           <h3 class="project-title">${escapeHtml(proj.title)}</h3>
-          <p class="project-placeholder-notice">${escapeHtml(proj.notice || `[${proj.category} Project]`)}</p>
           <p class="project-description">${escapeHtml(proj.description)}</p>
           <div class="project-tech-stack">
             ${techTags}
@@ -2668,7 +2667,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* ==================== 18b. CV AVAILABILITY ==================== */
+  // The hero "Download CV" button and the CV section start hidden and are
+  // shown only once assets/Kasunika_CV.pdf actually exists — so visitors
+  // never hit a broken download. Add the PDF and they appear by themselves.
+  async function showCvIfAvailable() {
+    const cvElements = document.querySelectorAll('[data-cv-only]');
+    if (!cvElements.length) return;
+    let available;
+    try {
+      const res = await fetch('assets/Kasunika_CV.pdf', { method: 'HEAD', cache: 'no-cache' });
+      available = res.ok;
+    } catch (e) {
+      // Page opened straight from disk (file://) can't check — show it.
+      available = window.location.protocol === 'file:';
+    }
+    cvElements.forEach(el => { el.hidden = !available; });
+  }
+
   /* ==================== 19. INITIAL RENDER ==================== */
+  showCvIfAvailable();
   updateAuthUI();
   renderProjects();
   applyStoredProfile();

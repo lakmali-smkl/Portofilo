@@ -40,6 +40,31 @@ describe('serves the website', () => {
     assert.match(res.headers['content-type'], /image\/jpeg/);
   });
 
+  it('does not announce the server software (no X-Powered-By header)', async () => {
+    for (const url of ['/', '/api/health', '/api/nope']) {
+      const res = await request(app).get(url);
+      assert.equal(res.headers['x-powered-by'], undefined, url);
+    }
+  });
+
+  it('the CV check (HEAD assets/Kasunika_CV.pdf) is 404 without the file and 200 with it', async () => {
+    const fs = require('fs');
+    const path = require('path');
+    const cv = path.join(__dirname, '..', '..', 'assets', 'Kasunika_CV.pdf');
+    const existed = fs.existsSync(cv);
+    if (!existed) {
+      assert.equal((await request(app).head('/assets/Kasunika_CV.pdf')).status, 404);
+      fs.writeFileSync(cv, '%PDF-1.4 test');
+    }
+    try {
+      const res = await request(app).head('/assets/Kasunika_CV.pdf');
+      assert.equal(res.status, 200);
+      assert.match(res.headers['content-type'], /pdf/);
+    } finally {
+      if (!existed) fs.unlinkSync(cv);
+    }
+  });
+
   it('API routes still work alongside the site', async () => {
     assert.equal((await request(app).get('/api/health')).status, 200);
   });

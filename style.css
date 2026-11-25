@@ -3099,6 +3099,7 @@ a.contact-detail-val:hover {
 /* Elements toggled with the `hidden` attribute must stay hidden even when a
    class gives them a display value. */
 .section[hidden],
+[data-cv-only][hidden],
 .nav-item[hidden],
 [data-section-link][hidden],
 .photo-manager[hidden],

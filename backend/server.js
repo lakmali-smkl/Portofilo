@@ -39,6 +39,8 @@ const { connectDB } = require('./db');
 const { resourceModel, Image, Profile, Auth } = require('./models');
 
 const app = express();
+// Don't advertise the server software in every response (X-Powered-By).
+app.disable('x-powered-by');
 // Hosting services (Render, Railway, ...) choose the port and pass it in PORT.
 const PORT = parseInt(process.env.PORT, 10) || 3001;
 
